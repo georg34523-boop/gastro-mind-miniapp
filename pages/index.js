@@ -1,62 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [user, setUser] = useState(null);
+  const [tg, setTg] = useState(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Telegram WebApp доступен глобально после загрузки скрипта
+    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+      const webapp = window.Telegram.WebApp;
 
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
+      webapp.expand(); // разворачивает mini-app на максимум
+      webapp.enableClosingConfirmation(); // предупреждение при закрытии
 
-    tg.ready();
-    tg.expand();
-
-    const initDataUnsafe = tg.initDataUnsafe;
-    if (initDataUnsafe && initDataUnsafe.user) {
-      setUser(initDataUnsafe.user);
+      setTg(webapp);
     }
   }, []);
 
   return (
-    <main className="gm-root">
-      <header className="gm-header">
-        <div className="gm-logo">GM</div>
-        <div className="gm-title-block">
-          <h1>GastroMind</h1>
-          <p>AI-ассистент ресторатора</p>
-        </div>
-      </header>
+    <div style={styles.container}>
+      <h1 style={styles.title}>GastroMind</h1>
 
-      <section className="gm-card">
-        <p className="gm-hello">
-          {user ? (
-            <>Привет, <span className="gm-accent">{user.first_name}</span> 👋</>
-          ) : (
-            'Загрузка данных из Telegram...'
-          )}
-        </p>
-        <p className="gm-text">
-          Это мини-приложение GastroMind. Скоро здесь будет панель,
-          которая поможет тебе управлять маркетингом, закупками,
-          персоналом и прибылью — прямо из Telegram.
-        </p>
-        <button
-          className="gm-button"
-          onClick={() => {
-            const tg = window.Telegram?.WebApp;
-            if (tg) {
-              tg.HapticFeedback?.impactOccurred('medium');
-            }
-          }}
-        >
-          Продолжить
-        </button>
-      </section>
+      <p style={styles.subtitle}>
+        AI-ассистент ресторатора
+      </p>
 
-      <footer className="gm-footer">
-        <span>v0.1 · MVP</span>
-      </footer>
-    </main>
+      <button
+        style={styles.button}
+        onClick={() => tg?.sendData("start_work")}
+      >
+        Начать работу
+      </button>
+    </div>
   );
 }
+
+const styles = {
+  container: {
+    padding: 20,
+    textAlign: "center",
+    fontFamily: "sans-serif",
+  },
+  title: {
+    fontSize: 28,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    opacity: 0.7,
+    marginBottom: 25,
+  },
+  button: {
+    padding: "14px 20px",
+    fontSize: 16,
+    borderRadius: 8,
+    backgroundColor: "#2ea6ff",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+  },
+};
