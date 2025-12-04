@@ -1,119 +1,106 @@
-:root {
-  color-scheme: dark;
-}
+/* styles/globals.css */
 
-html, body {
+html,
+body {
   padding: 0;
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text',
-    'Segoe UI', sans-serif;
-  background: #050509;
-  color: #f7f7ff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #fff7ec; /* светлый фон в цветах бренда */
+  color: #111827;
 }
 
 * {
   box-sizing: border-box;
 }
 
-.gm-root {
+/* Обёртка всего экрана */
+.app-root {
   min-height: 100vh;
-  padding: 16px;
+  padding: 24px 16px 32px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: radial-gradient(circle at top, #1b1630 0, #050509 55%);
-}
-
-.gm-header {
-  display: flex;
   align-items: center;
-  gap: 12px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 138, 101, 0.24), transparent 60%),
+    radial-gradient(circle at bottom right, rgba(0, 191, 179, 0.2), transparent 60%);
 }
 
-.gm-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: radial-gradient(circle at 30% 0, #ffd86f 0, #ff7a7a 35%, #6b5bff 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #050509;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
-
-.gm-title-block h1 {
-  font-size: 22px;
-  margin: 0;
-}
-
-.gm-title-block p {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: #a5a5c7;
-}
-
-.gm-card {
-  background: rgba(10, 10, 20, 0.96);
-  border-radius: 18px;
-  padding: 16px 14px 18px;
-  box-shadow:
-    0 14px 35px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(120, 120, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.gm-hello {
-  margin: 0;
-  font-size: 16px;
-}
-
-.gm-accent {
-  color: #ffb86c;
-  font-weight: 600;
-}
-
-.gm-text {
-  margin: 0;
-  margin-top: 4px;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #b5b5d8;
-}
-
-.gm-button {
-  margin-top: 12px;
-  padding: 11px 14px;
-  border-radius: 999px;
-  border: none;
-  outline: none;
-  font-size: 15px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #6b5bff, #ff7a7a);
-  color: #fff;
-  box-shadow:
-    0 10px 24px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gm-button:active {
-  transform: translateY(1px) scale(0.99);
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.gm-footer {
-  margin-top: auto;
-  font-size: 11px;
-  color: #717193;
+/* Заголовок */
+.app-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin: 8px 0 4px;
+  color: #ff5a4d; /* красно-оранжевый из лого */
   text-align: center;
-  padding-bottom: 4px;
+}
+
+.app-subtitle {
+  font-size: 14px;
+  color: #4b5563;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Подзаголовок "Выберите раздел" */
+.app-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Сетка карточек */
+.app-grid {
+  width: 100%;
+  max-width: 380px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* --- КАРТОЧКА МЕНЮ --- */
+
+.menu-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 16px 14px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.menu-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.2);
+}
+
+.menu-card__icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.menu-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.menu-card__desc {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+/* Чтоб не растягивалось слишком широко на айпаде и вебе */
+.app-inner {
+  width: 100%;
+  max-width: 420px;
 }
