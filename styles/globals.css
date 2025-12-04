@@ -1,0 +1,119 @@
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+    'Segoe UI', sans-serif;
+  background: #050509;
+  color: #f7f7ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.gm-root {
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: radial-gradient(circle at top, #1b1630 0, #050509 55%);
+}
+
+.gm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gm-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 30% 0, #ffd86f 0, #ff7a7a 35%, #6b5bff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #050509;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.gm-title-block h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+.gm-title-block p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #a5a5c7;
+}
+
+.gm-card {
+  background: rgba(10, 10, 20, 0.96);
+  border-radius: 18px;
+  padding: 16px 14px 18px;
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(120, 120, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-hello {
+  margin: 0;
+  font-size: 16px;
+}
+
+.gm-accent {
+  color: #ffb86c;
+  font-weight: 600;
+}
+
+.gm-text {
+  margin: 0;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #b5b5d8;
+}
+
+.gm-button {
+  margin-top: 12px;
+  padding: 11px 14px;
+  border-radius: 999px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #6b5bff, #ff7a7a);
+  color: #fff;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-button:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.gm-footer {
+  margin-top: auto;
+  font-size: 11px;
+  color: #717193;
+  text-align: center;
+  padding-bottom: 4px;
+}
