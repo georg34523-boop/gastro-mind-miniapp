@@ -1,68 +1,48 @@
-import { useEffect, useState } from "react";
+// pages/index.js
 import MenuCard from "../components/MenuCard";
 
 export default function Home() {
-  const [tg, setTg] = useState(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      const webapp = window.Telegram.WebApp;
-      webapp.ready();
-      webapp.expand();
-      setTg(webapp);
-    }
-  }, []);
+  const handleSectionClick = (section) => {
+    // пока просто алерт, потом сюда повесим навигацию / страницы
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+    console.log("Open section:", section);
+  };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>GastroMind</h1>
-      <p style={styles.subtitle}>Выберите раздел</p>
+    <div className="app-root">
+      <div className="app-inner">
+        <h1 className="app-title">GastroMind</h1>
+        <p className="app-subtitle">AI-ассистент для рестика</p>
 
-      <div style={styles.grid}>
-        <MenuCard
-          title="Маркетинг"
-          icon="📣"
-          onClick={() => tg?.sendData("open_marketing")}
-        />
-        <MenuCard
-          title="Меню & Себестоимость"
-          icon="📊"
-          onClick={() => tg?.sendData("open_cost")}
-        />
-        <MenuCard
-          title="Персонал"
-          icon="👨‍🍳"
-          onClick={() => tg?.sendData("open_staff")}
-        />
-        <MenuCard
-          title="Финансы & Аналитика"
-          icon="💰"
-          onClick={() => tg?.sendData("open_finance")}
-        />
+        <div className="app-section-title">Выберите раздел</div>
+
+        <div className="app-grid">
+          <MenuCard
+            icon="📣"
+            title="Маркетинг"
+            description="Реклама, акции, трафик гостей"
+            onClick={() => handleSectionClick("marketing")}
+          />
+          <MenuCard
+            icon="📊"
+            title="Меню & себестоимость"
+            description="Блюда, цены и маржа"
+            onClick={() => handleSectionClick("menu")}
+          />
+          <MenuCard
+            icon="👨‍🍳"
+            title="Персонал"
+            description="Графики, мотивация, задачи"
+            onClick={() => handleSectionClick("staff")}
+          />
+          <MenuCard
+            icon="💰"
+            title="Финансы & аналитика"
+            description="Прибыль, отчёты, прогнозы"
+            onClick={() => handleSectionClick("finance")}
+          />
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    padding: 20,
-    fontFamily: "system-ui, sans-serif",
-  },
-  title: {
-    textAlign: "center",
-    fontSize: 26,
-    marginBottom: 4,
-  },
-  subtitle: {
-    textAlign: "center",
-    opacity: 0.6,
-    marginBottom: 20,
-  },
-  grid: {
-    display: "flex",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 16,
-  },
-};
