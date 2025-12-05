@@ -1,84 +1,162 @@
-/* -----------------------
-   ГЛОБАЛЬНЫЙ ФОН + ЛОГО
-------------------------- */
+/* ===== Базовая разметка ===== */
+html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #faf5ed;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  color: #1f1f1f;
-  position: relative;
+  height: 100%;
 }
 
-/* Полупрозрачное большое лого */
-body::before {
+body {
+  background-color: #faf5ed; /* фон как в логотипе */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui,
+    sans-serif;
+  color: #1f1f1f;
+}
+
+/* Заполняем весь экран, чтобы не было белого низа */
+#__next,
+.app-root {
+  min-height: 100vh;
+}
+
+/* Добавляем отступ под “чёлку”/жестовую панель iOS */
+.gm-wrapper {
+  min-height: 100vh;
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Полупрозрачное большое лого на фоне */
+.gm-wrapper::before {
   content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: absolute;
+  inset: 0;
+  background-image: url("/logo-bg.png");
+  background-repeat: no-repeat;
+  background-position: center 120px;
+  background-size: 80%;
+  opacity: 0.10;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Шапка ===== */
+.gm-header {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.gm-logo-mark {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 auto 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.gm-logo-mark img {
   width: 100%;
   height: 100%;
-  background-image: url('/logo-bg.png');
-  background-repeat: no-repeat;
-  background-position: center 140px;
-  background-size: 70%;
-  opacity: 0.12;
-  z-index: -1;
-  pointer-events: none;
+  object-fit: cover;
 }
 
-/* -----------------------
-   ТЕКСТЫ
-------------------------- */
-h1 {
-  font-size: 32px;
-  font-weight: 700;
-  text-align: center;
-  margin-top: 36px;
+.gm-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px;
 }
 
-h2 {
-  font-size: 20px;
-  text-align: center;
-  font-weight: 500;
-  margin-bottom: 32px;
+.gm-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
 }
 
-/* -----------------------
-   СЕТКА КАРТОЧЕК
-------------------------- */
-.menu-grid {
+/* ===== Заголовок секции ===== */
+.gm-section-caption {
+  position: relative;
+  z-index: 1;
+  margin: 24px 0 18px;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ===== Сетка карточек ===== */
+.gm-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 0 20px 60px;
+  gap: 16px;
 }
 
-/* -----------------------
-   КАРТОЧКИ
-------------------------- */
-.menu-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  border-radius: 18px;
-  padding: 26px 14px;
+/* ===== Карточки разделов ===== */
+.gm-card {
+  border-radius: 20px;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
 }
 
-.menu-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0px 6px 14px rgba(0,0,0,0.08);
+.gm-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.menu-card-icon {
-  font-size: 42px;
-  margin-bottom: 10px;
+.gm-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 26px;
 }
 
-.menu-card-title {
-  font-size: 17px;
+/* Цвета карточек под фирменный стиль */
+.gm-card--marketing .gm-card-icon {
+  background: linear-gradient(135deg, #ff6b5c, #ff9f5a);
+}
+
+.gm-card--menu .gm-card-icon {
+  background: linear-gradient(135deg, #02c6c8, #18a4ff);
+}
+
+.gm-card--staff .gm-card-icon {
+  background: linear-gradient(135deg, #f7b500, #ff8a00);
+}
+
+.gm-card--finance .gm-card-icon {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.gm-card-title {
+  font-size: 16px;
   font-weight: 600;
+}
+
+.gm-card-sub {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.25;
 }
