@@ -1,27 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-
-  <!-- Фирменный бирюзовый круг -->
-  <circle cx="256" cy="256" r="230" fill="#2BBFC5"/>
-
-  <!-- Голова -->
-  <path d="M256 110c-52 0-94 42-94 94v104c0 52 42 94 94 94s94-42 94-94V204c0-52-42-94-94-94z"
-        fill="#F58220" stroke="#FFF" stroke-width="18" stroke-linejoin="round"/>
-
-  <!-- Мозг (с анимацией пульсации) -->
-  <g>
-    <path id="brain"
-      d="M222 188c-11-2-22 7-22 19v18c0 10 7 18 17 20l18 4v18l-13 7c-7 4-10 13-6 20s13 10 20 6l11-6 11 6c7 4 16 1 20-6s1-16-6-20l-13-7v-18l18-4c10-2 17-10 17-20v-18c0-12-11-21-22-19l-14 3-6-12c-4-8-15-8-19 0l-6 12-14-3z"
-      fill="#FFFFFF">
-      
-      <!-- АНИМАЦИЯ ПУЛЬСАЦИИ -->
-      <animateTransform 
-          attributeName="transform"
-          type="scale"
-          values="1;1.07;1"
-          dur="2.2s"
-          repeatCount="indefinite"
-          additive="sum"/>
-    </path>
-  </g>
-
+  <circle cx="256" cy="256" r="256" fill="#4EC6C6"/>
+  <path d="M202 350c0 0 27 28 54 28s54-28 54-28c38-36 38-94 0-130 0 0-27-28-54-28s-54 28-54 28C164 256 164 314 202 350z" fill="#F28B2C" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 230c-25 0-45 18-45 40 0 17 12 28 30 31v21c-10 4-18 10-18 19 0 10 12 19 24 19 9 0 18-6 24-10 6 4 15 10 24 10 12 0 24-9 24-19 0-9-8-15-18-19v-21c18-3 30-14 30-31 0-22-20-40-45-40z" 
+  fill="#FFFFFF"/>
 </svg>
