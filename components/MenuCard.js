@@ -1,15 +1,8 @@
-// components/MenuCard.js
-
-export default function MenuCard({ icon, title, description, onClick }) {
+export default function MenuCard({ icon, title, onClick }) {
   return (
     <div className="menu-card" onClick={onClick}>
-      <div className="menu-card__icon">{icon}</div>
-      <div>
-        <div className="menu-card__title">{title}</div>
-        {description && (
-          <div className="menu-card__desc">{description}</div>
-        )}
-      </div>
+      <div className="menu-card-icon">{icon}</div>
+      <div className="menu-card-title">{title}</div>
     </div>
   );
 }
