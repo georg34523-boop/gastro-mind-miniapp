@@ -1,4 +1,6 @@
-/* Глобальный фон + полупрозрачное лого */
+/* -----------------------
+   ГЛОБАЛЬНЫЙ ФОН + ЛОГО
+------------------------- */
 body {
   margin: 0;
   padding: 0;
@@ -8,7 +10,7 @@ body {
   position: relative;
 }
 
-/* Полупрозрачное лого */
+/* Полупрозрачное большое лого */
 body::before {
   content: "";
   position: fixed;
@@ -18,62 +20,65 @@ body::before {
   height: 100%;
   background-image: url('/logo-bg.png');
   background-repeat: no-repeat;
-  background-position: center 120px;
-  background-size: 65%;
-  opacity: 0.12; /* Мягкая видимость */
+  background-position: center 140px;
+  background-size: 70%;
+  opacity: 0.12;
   z-index: -1;
   pointer-events: none;
 }
 
-/* Общие стили */
+/* -----------------------
+   ТЕКСТЫ
+------------------------- */
 h1 {
   font-size: 32px;
   font-weight: 700;
   text-align: center;
   margin-top: 36px;
-  color: #1f1f1f;
 }
 
 h2 {
   font-size: 20px;
   text-align: center;
   font-weight: 500;
-  margin-bottom: 30px;
-  color: #333;
+  margin-bottom: 32px;
 }
 
-/* Контейнер сетки карточек */
+/* -----------------------
+   СЕТКА КАРТОЧЕК
+------------------------- */
 .menu-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  padding: 0 20px 50px;
+  gap: 20px;
+  padding: 0 20px 60px;
 }
 
-/* Оформление карточек */
+/* -----------------------
+   КАРТОЧКИ
+------------------------- */
 .menu-card {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(6px);
-  border-radius: 16px;
-  padding: 22px 10px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  padding: 26px 14px;
   text-align: center;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .menu-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+  box-shadow: 0px 6px 14px rgba(0,0,0,0.08);
 }
 
 .menu-card-icon {
-  font-size: 34px;
+  font-size: 42px;
   margin-bottom: 10px;
 }
 
 .menu-card-title {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
-  color: #1f1f1f;
 }
