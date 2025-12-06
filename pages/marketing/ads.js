@@ -1,92 +1,99 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Ads() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
+  const [status, setStatus] = useState("loading");
 
   // Загружаем сохранённую ссылку
   useEffect(() => {
-    const saved = localStorage.getItem("adsSheetUrl");
+    const saved = localStorage.getItem("sheetUrl");
     if (saved) {
       setSheetUrl(saved);
-      fetchData(saved);
+      loadSheetData(saved);
+    } else {
+      setStatus("no-sheet");
     }
   }, []);
 
-  // Получение данных из API
-  async function fetchData(url) {
-    try {
-      const res = await fetch(`/api/sheets?url=${encodeURIComponent(url)}`);
-      const json = await res.json();
-      console.log("sheet data:", json);
+  // Загрузка данных таблицы
+  async function loadSheetData(url) {
+    setStatus("loading");
 
-      if (json.values && json.values.length > 1) {
-        setData(json.values);
+    const sheetId = extractSheetId(url);
+    if (!sheetId) {
+      setStatus("invalid");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/sheets?sheetId=${sheetId}`);
+      const json = await res.json();
+
+      if (json.error || !json.data) {
+        setStatus("empty");
       } else {
-        setData([]);
+        setData(json.data);
+        setStatus("ok");
       }
     } catch (e) {
-      console.error(e);
-      setData([]);
+      setStatus("error");
     }
   }
 
+  // Сохранение новой ссылки
   function saveUrl() {
-    localStorage.setItem("adsSheetUrl", sheetUrl);
-    fetchData(sheetUrl);
+    localStorage.setItem("sheetUrl", sheetUrl);
+    loadSheetData(sheetUrl);
+  }
+
+  // Достаём sheetId из URL
+  function extractSheetId(url) {
+    if (!url) return null;
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : null;
   }
 
   return (
-    <div className="app-container">
-
-      {/* кнопка НАЗАД */}
-      <a href="/marketing" className="back-btn">← назад</a>
+    <div className="page">
+      <Link href="/marketing" className="back-button">← Назад</Link>
 
       <h1 className="title">Реклама</h1>
       <p className="subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Ввод ссылки */}
-      <div className="input-block">
-        <label className="input-label">Ссылка на Google Таблицу</label>
+      {/* Инпут для ссылки */}
+      <div className="sheet-input-block">
         <input
-          className="url-input"
           type="text"
-          placeholder="https://docs.google.com/…"
+          className="sheet-input"
+          placeholder="Вставьте ссылку на Google Таблицу"
           value={sheetUrl}
           onChange={(e) => setSheetUrl(e.target.value)}
         />
-        <button className="save-btn" onClick={saveUrl}>Подключить таблицу</button>
+        <button className="sheet-save-btn" onClick={saveUrl}>
+          Подключить таблицу
+        </button>
       </div>
 
-      {/* Таблица */}
-      {data && data.length > 0 ? (
-        <div className="table-container">
-          <table className="data-table">
+      {/* Статусы */}
+      {status === "no-sheet" && <p>Введите ссылку выше.</p>}
+      {status === "invalid" && <p>Некорректная ссылка на таблицу.</p>}
+      {status === "loading" && <p>Загрузка данных...</p>}
+      {status === "empty" && <p>Таблица подключена, но нет данных.</p>}
+      {status === "error" && <p>Ошибка загрузки таблицы.</p>}
 
-            <thead>
-              <tr>
-                {data[0].map((h, i) => (
-                  <th key={i}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {data.slice(1).map((row, i) => (
-                <tr key={i}>
-                  {row.map((cell, j) => (
-                    <td key={j}>{cell}</td>
-                  ))}
-                </tr>
+      {/* Вывод данных */}
+      {status === "ok" && (
+        <div className="sheet-table">
+          {data.map((row, i) => (
+            <div key={i} className="sheet-row">
+              {row.map((cell, j) => (
+                <div key={j} className="sheet-cell">{cell}</div>
               ))}
-            </tbody>
-
-          </table>
+            </div>
+          ))}
         </div>
-      ) : (
-        <p style={{ marginTop: 20 }}>
-          Таблица подключена, но нет данных для отображения.
-        </p>
       )}
     </div>
   );
