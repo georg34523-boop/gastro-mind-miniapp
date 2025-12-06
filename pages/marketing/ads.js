@@ -1,76 +1,72 @@
-import { useState, useEffect } from "react";
-import Head from "next/head";
+import { useState } from "react";
 
 export default function Ads() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [savedSheetUrl, setSavedSheetUrl] = useState("");
+  const [savedUrl, setSavedUrl] = useState(null);
+  const [status, setStatus] = useState("");
 
-  useEffect(() => {
-    const saved = localStorage.getItem("adsSheetUrl");
-    if (saved) setSavedSheetUrl(saved);
-  }, []);
-
-  const saveSheetUrl = () => {
+  const handleSave = () => {
     if (!sheetUrl.includes("docs.google.com")) {
-      alert("Введите корректную ссылку на Google Таблицу");
+      setStatus("❌ Это не похоже на ссылку Google Sheets");
       return;
     }
-    localStorage.setItem("adsSheetUrl", sheetUrl);
-    setSavedSheetUrl(sheetUrl);
+
+    setSavedUrl(sheetUrl);
+    setStatus("✅ Таблица подключена!");
+  };
+
+  const checkData = async () => {
+    if (!savedUrl) {
+      setStatus("⚠️ Сначала подключите таблицу");
+      return;
+    }
+
+    setStatus("⏳ Подключение к данным...");
+
+    try {
+      const res = await fetch(`/api/sheets?url=${encodeURIComponent(savedUrl)}`);
+      const data = await res.json();
+
+      if (data.error) {
+        setStatus("❌ Ошибка чтения таблицы");
+      } else {
+        setStatus("✅ Данные успешно загружены!");
+        console.log("DATA:", data);
+      }
+    } catch (err) {
+      setStatus("❌ Ошибка соединения");
+    }
   };
 
   return (
     <div className="app-container">
-      <Head>
-        <title>Реклама — GastroMind</title>
-      </Head>
-
       <h1 className="title">Реклама</h1>
+      <p className="subtitle">Подключите Google Таблицу</p>
 
-      {!savedSheetUrl && (
-        <div className="card">
-          <h2>Подключите Google Таблицу</h2>
-          <p className="subtitle">
-            Вставьте ссылку на таблицу, где таргетолог ведёт расходы, результаты и кампании.
-          </p>
+      <div className="card">
+        <label>Ссылка на Google Sheets:</label>
+        <input
+          className="input"
+          placeholder="Вставьте ссылку..."
+          value={sheetUrl}
+          onChange={(e) => setSheetUrl(e.target.value)}
+        />
 
-          <input
-            className="input"
-            type="text"
-            placeholder="https://docs.google.com/..."
-            value={sheetUrl}
-            onChange={(e) => setSheetUrl(e.target.value)}
-          />
+        <button className="btn" onClick={handleSave}>
+          Подключить таблицу
+        </button>
 
-          <button className="btn" onClick={saveSheetUrl}>
-            Сохранить
-          </button>
-        </div>
-      )}
+        {savedUrl && (
+          <>
+            <div className="sheet-url">Подключено: {savedUrl}</div>
+            <button className="btn-secondary" onClick={checkData}>
+              Проверить данные
+            </button>
+          </>
+        )}
 
-      {savedSheetUrl && (
-        <div className="card">
-          <h2>Google Таблица подключена</h2>
-          <p>Мы будем автоматически анализировать данные.</p>
-
-          <div className="sheet-url">{savedSheetUrl}</div>
-
-          <button
-            className="btn-secondary"
-            onClick={() => {
-              localStorage.removeItem("adsSheetUrl");
-              setSavedSheetUrl("");
-            }}
-          >
-            Изменить таблицу
-          </button>
-
-          {/* Здесь позже появятся графики, бюджеты, ROAS и т.д. */}
-          <div className="dashboard-placeholder">
-            📊 Дашборд появится после интеграции данных
-          </div>
-        </div>
-      )}
+        {status && <p className="dashboard-placeholder">{status}</p>}
+      </div>
     </div>
   );
 }
