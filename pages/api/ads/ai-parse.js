@@ -1,11 +1,15 @@
+export const config = {
+  runtime: "nodejs",
+};
+
 import OpenAI from "openai";
 
 export default async function handler(req, res) {
   try {
-    const { rows } = req.body;
+    const { table } = req.body;
 
-    if (!rows || rows.length === 0) {
-      return res.status(400).json({ error: "No rows provided" });
+    if (!table || !Array.isArray(table)) {
+      return res.status(400).json({ error: "Нет данных таблицы" });
     }
 
     const client = new OpenAI({
@@ -13,65 +17,26 @@ export default async function handler(req, res) {
     });
 
     const prompt = `
-Вот строки из рекламной таблицы:
-
-${rows.map((r) => r.join(", ")).join("\n")}
-
-Твоя задача — распознать данные о рекламе, даже если они:
-- в разных колонках
-- называются по-разному
-- содержат числа в тексте
-
-Найди и посчитай:
-- Название кампании (если нет — создай краткое)
-- Потрачено (spend)
-- Показы (impressions)
-- Клики (clicks)
-- CTR (%)
-- CPC
-- Конверсии
-- CPA
-
-Верни строго JSON вида:
-
-{
-  "campaigns": [
-    {
-      "name": "",
-      "spend": "",
-      "impressions": "",
-      "clicks": "",
-      "ctr": "",
-      "cpc": "",
-      "conversions": "",
-      "cpa": ""
-    }
-  ]
-}
-
-Без текста вокруг JSON.
+Ты — аналитик рекламных данных ресторана.
+Проанализируй таблицу и определи ключевые показатели:
+- общие расходы
+- количество кликов
+- количество лидов
+- цену лида
+- какие кампании эффективны
+Таблица: ${JSON.stringify(table)}
 `;
 
-    const aiResponse = await client.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "gpt-4.1",
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.2,
     });
 
-    let parsed;
+    const result = completion.choices[0].message.content;
 
-    try {
-      parsed = JSON.parse(aiResponse.choices[0].message.content);
-    } catch (e) {
-      return res.status(200).json({
-        error: "AI returned non-JSON response",
-        raw: aiResponse.choices[0].message.content,
-      });
-    }
-
-    return res.status(200).json(parsed);
-  } catch (err) {
-    console.error("AI Parsing Error:", err);
-    return res.status(500).json({ error: "AI parsing failed" });
+    res.status(200).json({ ok: true, analysis: result });
+  } catch (e) {
+    console.error("AI parse error:", e);
+    res.status(500).json({ error: "AI error", details: e.message });
   }
 }
