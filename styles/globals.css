@@ -1,13 +1,14 @@
-/* ===============================
-   ГЛОБАЛЬНЫЕ СТИЛИ ПРОЕКТА
-   =============================== */
+/* ------------------------------------------- */
+/* 🌎 ГЛОБАЛЬНЫЕ СТИЛИ ДЛЯ ВСЕГО ПРИЛОЖЕНИЯ */
+/* ------------------------------------------- */
 
-html, body {
+body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  background: #f7f1e6;
+  background: #faf3e8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #222;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
@@ -16,59 +17,70 @@ html, body {
   margin: auto;
 }
 
-/* ===============================
-   ЛОГО
-   =============================== */
+/* ------------------------------------------- */
+/* 🔙 КНОПКА НАЗАД */
+/* ------------------------------------------- */
+
+.back-btn {
+  display: inline-block;
+  font-size: 18px;
+  margin-bottom: 20px;
+  text-decoration: none;
+  color: #444;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  opacity: 0.7;
+}
+
+/* ------------------------------------------- */
+/* 🧠 ЛОГО ГЛАВНОЙ СТРАНИЦЫ */
+/* ------------------------------------------- */
 
 .logo-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }
 
 .logo {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  animation: pulse 4s infinite ease-in-out;
+  object-fit: contain;
 }
 
-/* Пульсация */
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.04); opacity: 0.85; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* ===============================
-   ТЕКСТЫ
-   =============================== */
+/* ------------------------------------------- */
+/* 📝 ТЕКСТЫ ГЛАВНОГО ЭКРАНА */
+/* ------------------------------------------- */
 
 .title {
-  font-size: 34px;
+  font-size: 42px;
   font-weight: 800;
   text-align: center;
-  margin-top: 10px;
+  margin-top: 0px;
+  margin-bottom: 5px;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 18px;
-  opacity: 0.7;
-  margin-top: -10px;
+  font-size: 20px;
+  color: #666;
   margin-bottom: 25px;
 }
 
 .section-title {
-  font-size: 24px;
+  font-size: 26px;
+  margin-top: 10px;
+  margin-bottom: 25px;
   font-weight: 700;
-  margin-top: 15px;
-  margin-bottom: 20px;
 }
 
-/* ===============================
-   ГРИД С КАРТОЧКАМИ
-   =============================== */
+/* ------------------------------------------- */
+/* 🟦 ГРИД МЕНЮ НА ГЛАВНОЙ */
+/* ------------------------------------------- */
 
 .menu-grid {
   display: grid;
@@ -77,120 +89,145 @@ html, body {
 }
 
 .menu-card {
-  background: white;
+  background: #ffffff;
   padding: 22px;
   border-radius: 22px;
   text-align: center;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.07);
-  transition: 0.2s;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.06);
+  transition: transform 0.18s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .menu-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+  transform: translateY(-4px);
+  box-shadow: 0px 12px 24px rgba(0,0,0,0.12);
 }
 
 .menu-icon {
-  width: 48px;
-  height: 48px;
+  width: 70px;
+  height: 70px;
   margin-bottom: 12px;
 }
 
 .menu-title {
+  font-size: 22px;
   font-weight: 700;
-  font-size: 20px;
-  margin-bottom: 3px;
 }
 
 .menu-subtitle {
-  opacity: 0.6;
-  font-size: 14px;
+  margin-top: 6px;
+  font-size: 16px;
+  color: #777;
 }
 
-/* ===============================
-   СТРАНИЦА MARKETING
-   =============================== */
+/* ------------------------------------------- */
+/* 📄 СТРАНИЦА ВНУТРЕННИХ РАЗДЕЛОВ (Marketing, Ads…) */
+/* ------------------------------------------- */
 
-.back-btn {
-  display: inline-block;
-  margin-bottom: 20px;
-  color: #444;
+.page-title {
+  font-size: 38px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  color: #666;
+  font-size: 20px;
+  margin-bottom: 30px;
+}
+
+.block-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.block-item {
+  background: white;
+  padding: 22px;
+  border-radius: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: transform 0.15s ease;
+}
+
+.block-item:hover {
+  transform: translateY(-3px);
+}
+
+/* ------------------------------------------- */
+/* 🟨 СТРАНИЦА РЕКЛАМЫ – ФОРМА ДЛЯ ВВОДА URL */
+/* ------------------------------------------- */
+
+.input-block {
+  margin-bottom: 28px;
+}
+
+.input-label {
+  display: block;
   font-size: 18px;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
-/* ===============================
-   ТАБЛИЦА ДЛЯ ads.js
-   =============================== */
+.url-input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: 2px solid #e3ded6;
+  font-size: 16px;
+}
+
+.url-input:focus {
+  border-color: #00b8b0;
+  outline: none;
+}
+
+.save-btn {
+  margin-top: 12px;
+  padding: 12px 20px;
+  background: #00b8b0;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-size: 17px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save-btn:hover {
+  opacity: 0.9;
+}
+
+/* ------------------------------------------- */
+/* 📊 ТАБЛИЦА GOOGLE SHEETS */
+/* ------------------------------------------- */
 
 .table-container {
-  margin-top: 25px;
+  margin-top: 35px;
   overflow-x: auto;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  border-radius: 12px;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  font-size: 15px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .data-table th {
-  background: #f0e7db;
-  padding: 12px;
-  font-weight: 700;
+  background: #f3f0eb;
+  padding: 14px;
   text-align: left;
+  font-weight: 700;
 }
 
 .data-table td {
-  padding: 10px;
-  border-top: 1px solid #efefef;
-}
-
-.data-table tr:hover td {
-  background: #faf7f3;
-}
-
-/* ===============================
-   INPUT + BUTTON
-   =============================== */
-
-.input-block {
-  margin-top: 25px;
-}
-
-.input-label {
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.url-input {
-  width: 100%;
   padding: 12px;
-  border-radius: 14px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  outline: none;
+  border-bottom: 1px solid #eee;
 }
 
-.url-input:focus {
-  border-color: #36b7c8;
-}
-
-.save-btn {
-  margin-top: 12px;
-  padding: 12px 18px;
-  border: none;
-  border-radius: 14px;
-  background: #36b7c8;
-  color: white;
-  font-size: 18px;
-  width: 100%;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.save-btn:hover {
-  background: #2aa7b6;
+.data-table tr:last-child td {
+  border-bottom: none;
 }
