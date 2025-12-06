@@ -1,219 +1,196 @@
-/* ===========================
-   БАЗОВЫЕ СТИЛИ
-=========================== */
+/* ===============================
+   ГЛОБАЛЬНЫЕ СТИЛИ ПРОЕКТА
+   =============================== */
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  background: #faf4e8;
+  background: #f7f1e6;
   color: #222;
 }
 
 .app-container {
   padding: 20px;
-  padding-bottom: 120px;
+  max-width: 900px;
+  margin: auto;
 }
 
-
-/* ===========================
+/* ===============================
    ЛОГО
-=========================== */
+   =============================== */
 
 .logo-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .logo {
-  width: 120px;
-  height: 120px;
-  animation: pulse-logo 2.5s infinite ease-in-out;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  animation: pulse 4s infinite ease-in-out;
 }
 
-@keyframes pulse-logo {
-  0%   { transform: scale(1); opacity: 1; }
-  50%  { transform: scale(1.05); opacity: 0.85; }
+/* Пульсация */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
   100% { transform: scale(1); opacity: 1; }
 }
 
-
-/* ===========================
+/* ===============================
    ТЕКСТЫ
-=========================== */
+   =============================== */
 
 .title {
+  font-size: 34px;
+  font-weight: 800;
   text-align: center;
-  font-size: 32px;
-  font-weight: 700;
   margin-top: 10px;
-  color: #222;
 }
 
 .subtitle {
   text-align: center;
-  font-size: 17px;
-  color: #666;
+  font-size: 18px;
+  opacity: 0.7;
   margin-top: -10px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .section-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
-  margin: 25px 0 10px;
-  text-align: left;
+  margin-top: 15px;
+  margin-bottom: 20px;
 }
 
-
-/* ===========================
-   ГЛАВНОЕ МЕНЮ — КАРТОЧКИ
-=========================== */
+/* ===============================
+   ГРИД С КАРТОЧКАМИ
+   =============================== */
 
 .menu-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
-  margin-top: 20px;
 }
 
 .menu-card {
-  background: #fff;
-  border-radius: 22px;
-  padding: 22px 12px;
-  text-align: center;
-  box-shadow: 0 8px 26px rgba(0,0,0,0.07);
-  transition: all 0.2s;
-}
-
-.menu-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.12);
-}
-
-.menu-icon {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 8px;
-}
-
-.menu-title {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.menu-subtitle {
-  font-size: 14px;
-  color: #777;
-  margin-top: 6px;
-}
-
-
-/* ===========================
-   РАЗДЕЛ: МАРКЕТИНГ → РЕКЛАМА
-=========================== */
-
-.card {
   background: white;
   padding: 22px;
-  border-radius: 20px;
-  margin: 20px 0;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.06);
-}
-
-.input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  font-size: 16px;
-  margin: 12px 0 18px;
-}
-
-.btn {
-  width: 100%;
-  background: #00A8A8;
-  color: white;
-  padding: 14px;
-  border: none;
-  border-radius: 14px;
-  font-size: 17px;
-  font-weight: 600;
+  border-radius: 22px;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.07);
   transition: 0.2s;
 }
 
-.btn:hover {
-  background: #009292;
+.menu-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
 }
 
-.btn-secondary {
-  margin-top: 14px;
+.menu-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+.menu-title {
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+
+.menu-subtitle {
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+/* ===============================
+   СТРАНИЦА MARKETING
+   =============================== */
+
+.back-btn {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: #444;
+  font-size: 18px;
+}
+
+/* ===============================
+   ТАБЛИЦА ДЛЯ ads.js
+   =============================== */
+
+.table-container {
+  margin-top: 25px;
+  overflow-x: auto;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+
+.data-table {
   width: 100%;
-  background: #eee;
-  color: #333;
-  padding: 12px;
-  border-radius: 12px;
+  border-collapse: collapse;
+  background: white;
   font-size: 15px;
 }
 
-.sheet-url {
-  font-size: 14px;
-  color: #555;
-  background: #f4f4f4;
+.data-table th {
+  background: #f0e7db;
+  padding: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.data-table td {
   padding: 10px;
-  border-radius: 10px;
-  margin-top: 10px;
+  border-top: 1px solid #efefef;
 }
 
-.dashboard-placeholder {
-  margin-top: 30px;
-  text-align: center;
-  font-size: 16px;
-  color: #888;
+.data-table tr:hover td {
+  background: #faf7f3;
 }
 
+/* ===============================
+   INPUT + BUTTON
+   =============================== */
 
-/* ===========================
-   КНОПКИ ЛИСТА В МАРКЕТИНГЕ
-=========================== */
+.input-block {
+  margin-top: 25px;
+}
 
-.option-button {
+.input-label {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.url-input {
   width: 100%;
-  background: #fff;
-  padding: 18px 20px;
-  border-radius: 18px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-  margin-bottom: 14px;
-  font-size: 17px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.option-button img {
-  width: 32px;
-  height: 32px;
-}
-
-.option-label {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #ccc;
   font-size: 16px;
-  color: #333;
+  outline: none;
 }
 
+.url-input:focus {
+  border-color: #36b7c8;
+}
 
-/* ===========================
-   АДАПТИВНОСТЬ
-=========================== */
+.save-btn {
+  margin-top: 12px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 14px;
+  background: #36b7c8;
+  color: white;
+  font-size: 18px;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.2s;
+}
 
-@media (max-width: 420px) {
-  .title {
-    font-size: 28px;
-  }
-  .menu-grid {
-    gap: 14px;
-  }
-  .menu-card {
-    padding: 18px 10px;
-  }
+.save-btn:hover {
+  background: #2aa7b6;
 }
