@@ -1,43 +1,122 @@
-/* ======= Глобальные стили ======= */
+/* ===== Глобальные настройки ===== */
+
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   background: #f7f3eb;
+  font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
+  color: #222;
 }
+
+/* ===== Главный экран ===== */
+
+.app-container {
+  padding: 24px;
+  text-align: center;
+}
+
+.logo-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.subtitle {
+  font-size: 20px;
+  color: #6a6a6a;
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 24px;
+  text-align: left;
+  font-weight: 700;
+  margin-bottom: 15px;
+  margin-top: 40px;
+}
+
+/* ====== Карточки меню ====== */
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.menu-card {
+  background: white;
+  padding: 16px;
+  border-radius: 18px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.06);
+  transition: transform 0.15s ease;
+}
+
+.menu-card:hover {
+  transform: scale(1.03);
+}
+
+.menu-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.menu-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.menu-subtitle {
+  font-size: 14px;
+  color: #777;
+}
+
+/* ====== Стрелка назад ====== */
+
+.back-link {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+/* ======= Заголовки страниц ======= */
 
 .page-container {
-  padding: 20px;
+  padding: 24px;
 }
-
-/* ======= Текстовые стили ======= */
 
 .page-title {
   font-size: 36px;
   font-weight: 700;
   text-align: center;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  color: #222;
 }
 
 .page-subtitle {
-  font-size: 20px;
   text-align: center;
+  font-size: 20px;
   color: #6a6a6a;
   margin-bottom: 25px;
 }
 
-.back-link {
-  display: inline-block;
-  font-size: 20px;
-  margin-bottom: 10px;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-/* ======= Поле ввода и кнопка ======= */
+/* ======= Подключение таблицы ======= */
 
 .sheet-input-block {
   display: flex;
@@ -54,13 +133,13 @@ body {
 }
 
 .sheet-button {
-  padding: 12px 18px;
-  border-radius: 10px;
+  padding: 12px 16px;
   background: #14b8a6;
-  color: white;
+  color: #fff;
+  border-radius: 10px;
   border: none;
-  font-size: 16px;
   cursor: pointer;
+  font-size: 16px;
 }
 
 .sheet-button:hover {
@@ -74,43 +153,23 @@ body {
   overflow-x: auto;
 }
 
-.sheet-table {
-  width: 100%;
-  border-collapse: collapse;
-  display: block;
-}
-
 .sheet-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  background: #fff;
-  margin-bottom: 6px;
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  font-size: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
 }
 
 .sheet-row.header {
   background: #eaf3ff;
-  font-weight: bold;
-  color: #333;
+  font-weight: 700;
 }
 
 .sheet-cell {
-  padding: 4px 8px;
-  word-break: break-word;
+  padding: 6px;
   font-size: 14px;
-}
-
-/* ======= Адаптив ======= */
-
-@media (max-width: 480px) {
-  .page-title {
-    font-size: 30px;
-  }
-
-  .sheet-row {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
+  word-break: break-word;
 }
