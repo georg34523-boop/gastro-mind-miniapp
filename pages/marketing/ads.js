@@ -1,71 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function Ads() {
-  const [sheetUrl, setSheetUrl] = useState("");
-  const [savedUrl, setSavedUrl] = useState(null);
-  const [status, setStatus] = useState("");
+export default function AdsPage() {
+  const [csvData, setCsvData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    if (!sheetUrl.includes("docs.google.com")) {
-      setStatus("❌ Это не похоже на ссылку Google Sheets");
+  useEffect(() => {
+    // Читаем сохранённый URL таблицы из localStorage
+    const sheetUrl = localStorage.getItem("sheetUrl");
+
+    if (!sheetUrl) {
+      setLoading(false);
       return;
     }
 
-    setSavedUrl(sheetUrl);
-    setStatus("✅ Таблица подключена!");
-  };
+    async function loadData() {
+      try {
+        const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
+        const data = await res.json();
 
-  const checkData = async () => {
-    if (!savedUrl) {
-      setStatus("⚠️ Сначала подключите таблицу");
-      return;
-    }
-
-    setStatus("⏳ Подключение к данным...");
-
-    try {
-      const res = await fetch(`/api/sheets?url=${encodeURIComponent(savedUrl)}`);
-      const data = await res.json();
-
-      if (data.error) {
-        setStatus("❌ Ошибка чтения таблицы");
-      } else {
-        setStatus("✅ Данные успешно загружены!");
-        console.log("DATA:", data);
+        const parsed = parseCsv(data.csv);
+        setCsvData(parsed);
+      } catch (e) {
+        console.error("Ошибка загрузки таблицы:", e);
       }
-    } catch (err) {
-      setStatus("❌ Ошибка соединения");
+      setLoading(false);
     }
-  };
+
+    loadData();
+  }, []);
+
+  // CSV → JSON
+  function parseCsv(csv) {
+    const rows = csv.split("\n").map(r => r.split(","));
+    const headers = rows[0];
+
+    return rows.slice(1).map(row =>
+      Object.fromEntries(headers.map((h, i) => [h.trim(), row[i]?.trim()]))
+    );
+  }
 
   return (
     <div className="app-container">
+
       <h1 className="title">Реклама</h1>
-      <p className="subtitle">Подключите Google Таблицу</p>
+      <p className="subtitle">Данные из вашей Google Таблицы</p>
 
-      <div className="card">
-        <label>Ссылка на Google Sheets:</label>
-        <input
-          className="input"
-          placeholder="Вставьте ссылку..."
-          value={sheetUrl}
-          onChange={(e) => setSheetUrl(e.target.value)}
-        />
+      {loading && <p>Загрузка...</p>}
 
-        <button className="btn" onClick={handleSave}>
-          Подключить таблицу
-        </button>
+      {!loading && csvData.length === 0 && (
+        <p>Таблица подключена, но нет данных для отображения.</p>
+      )}
 
-        {savedUrl && (
-          <>
-            <div className="sheet-url">Подключено: {savedUrl}</div>
-            <button className="btn-secondary" onClick={checkData}>
-              Проверить данные
-            </button>
-          </>
+      {/* Выводим таблицу */}
+      <div className="table-container">
+        {csvData.length > 0 && (
+          <table className="data-table">
+            <thead>
+              <tr>
+                {Object.keys(csvData[0]).map((col, i) => (
+                  <th key={i}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {csvData.map((row, i) => (
+                <tr key={i}>
+                  {Object.values(row).map((cell, j) => (
+                    <td key={j}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-
-        {status && <p className="dashboard-placeholder">{status}</p>}
       </div>
     </div>
   );
