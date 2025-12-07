@@ -4,25 +4,25 @@ import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    const { url } = req.query;
+    let { url } = req.query;
 
     if (!url) {
       return res.status(400).json({ error: "Не указана ссылка на таблицу" });
     }
 
-    // Проверяем что пользователь дал полный URL
-    if (!url.includes("/d/")) {
+    // ДЕКОДИРУЕМ URL (главное исправление)
+    url = decodeURIComponent(url);
+
+    // Извлекаем sheetId
+    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+
+    if (!match || !match[1]) {
       return res.status(400).json({ error: "Неверная ссылка Google Таблицы" });
     }
 
-    // Извлекаем sheetId из URL
-    const sheetId = url.split("/d/")[1].split("/")[0];
+    const sheetId = match[1];
 
-    if (!sheetId) {
-      return res.status(400).json({ error: "Не удалось определить sheetId" });
-    }
-
-    // Авторизация Google API
+    // Авторизация Google
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Запрашиваем данные
+    // Получаем данные
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "A:ZZ",
@@ -45,12 +45,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ data: [], message: "Таблица пустая" });
     }
 
-    // Превращаем массив → массив объектов
+    // Преобразование в JSON-объекты
     const headers = rows[0];
     const items = rows.slice(1).map((row) => {
-      let obj = {};
+      const obj = {};
       headers.forEach((h, i) => {
-        obj[h] = row[i] ?? "";
+        obj[h] = row[i] || "";
       });
       return obj;
     });
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ data: items });
 
   } catch (error) {
-    console.error("Sheets API Error:", error);
+    console.error("Sheets API error:", error);
     return res.status(500).json({ error: error.message });
   }
 }
