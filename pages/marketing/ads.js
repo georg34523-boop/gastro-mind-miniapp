@@ -63,10 +63,37 @@ export default function AdsPage() {
       {status === "loading" && <p>Загрузка...</p>}
       {status === "error" && <p>Ошибка загрузки данных</p>}
 
-      {/* ТАБЛИЦА */}
-      {status === "ok" && headers.length > 0 && (
-        <div className="sheet-table-wrapper">
-          <div className="sheet-table">
+      {/* Таблица */}
+{status === "ok" && data && (
+  <div className="sheet-table-container">
+    <div className="sheet-table">
+      {/* Header */}
+      <div className="sheet-row header">
+        {Object.keys(data[0]).map((col, i) => (
+          <div key={i} className="sheet-cell header-cell">
+            {col}
+          </div>
+        ))}
+      </div>
+
+      {/* Rows */}
+      <div className="sheet-body">
+        {data.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            className={`sheet-row ${rowIndex % 2 === 0 ? "even" : "odd"}`}
+          >
+            {Object.values(row).map((cell, cellIndex) => (
+              <div key={cellIndex} className="sheet-cell">
+                {cell || "-"}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
             {/* Заголовки */}
             <div className="sheet-row header">
