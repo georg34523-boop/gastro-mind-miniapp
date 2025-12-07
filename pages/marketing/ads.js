@@ -1,10 +1,11 @@
+// pages/ads.js
+
 import { useState } from "react";
 import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [headers, setHeaders] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [data, setData] = useState(null);
   const [status, setStatus] = useState("idle");
 
   async function connectSheet() {
@@ -13,39 +14,42 @@ export default function AdsPage() {
       return;
     }
 
+    // ПОДДЕРЖИВАЕМ ЛЮБОЙ ФОРМАТ ССЫЛКИ
+    const sheetId =
+      sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
+      sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
+      sheetUrl.match(/id=([a-zA-Z0-9-_]+)/)?.[1];
+
+    if (!sheetId) {
+      alert("Не удалось определить ID таблицы");
+      return;
+    }
+
     setStatus("loading");
 
-    try {
-      const res = await fetch(
-        `/api/sheets?url=${encodeURIComponent(sheetUrl)}`
-      );
+    const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
+    const json = await res.json();
 
-      const json = await res.json();
-      console.log("CLIENT RECEIVED:", json);
-
-      if (json.error) {
-        alert(json.error);
-        setStatus("error");
-        return;
-      }
-
-      setHeaders(json.headers || []);
-      setRows(json.rows || []);
-      setStatus("ok");
-    } catch (e) {
-      alert("Ошибка загрузки данных");
+    if (json.error) {
+      alert(json.error);
       setStatus("error");
+      return;
     }
+
+    setData(json.data || []); // JSON вернёт "data"
+    setStatus("ok");
   }
 
   return (
     <div className="page-container">
-      <Link href="/marketing" className="back-link">← Назад</Link>
+      <Link href="/marketing" className="back-link">
+        ← Назад
+      </Link>
 
       <h1 className="page-title">Реклама</h1>
       <p className="page-subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Поле ввода */}
+      {/* Поле для URL */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -54,72 +58,48 @@ export default function AdsPage() {
           onChange={(e) => setSheetUrl(e.target.value)}
           className="sheet-input"
         />
-
         <button onClick={connectSheet} className="sheet-button">
           Подключить таблицу
         </button>
       </div>
 
-      {status === "loading" && <p>Загрузка...</p>}
-      {status === "error" && <p>Ошибка загрузки данных</p>}
+      {/* Состояния */}
+      {status === "loading" && <p>Загрузка данных...</p>}
+      {status === "error" && <p>Ошибка загрузки</p>}
 
-      {/* Таблица */}
-{status === "ok" && data && (
-  <div className="sheet-table-container">
-    <div className="sheet-table">
-      {/* Header */}
-      <div className="sheet-row header">
-        {Object.keys(data[0]).map((col, i) => (
-          <div key={i} className="sheet-cell header-cell">
-            {col}
-          </div>
-        ))}
-      </div>
-
-      {/* Rows */}
-      <div className="sheet-body">
-        {data.map((row, rowIndex) => (
-          <div
-            key={rowIndex}
-            className={`sheet-row ${rowIndex % 2 === 0 ? "even" : "odd"}`}
-          >
-            {Object.values(row).map((cell, cellIndex) => (
-              <div key={cellIndex} className="sheet-cell">
-                {cell || "-"}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
-
-            {/* Заголовки */}
+      {/* ====== КРАСИВАЯ ТАБЛИЦА ====== */}
+      {status === "ok" && data && data.length > 0 && (
+        <div className="sheet-table-container">
+          <div className="sheet-table">
+            {/* Header */}
             <div className="sheet-row header">
-              {headers.map((h, i) => (
+              {Object.keys(data[0]).map((col, i) => (
                 <div key={i} className="sheet-cell header-cell">
-                  {h}
+                  {col}
                 </div>
               ))}
             </div>
 
-            {/* Данные */}
-            {rows.map((row, rowIndex) => (
-              <div key={rowIndex} className="sheet-row">
-                {headers.map((h, colIndex) => (
-                  <div key={colIndex} className="sheet-cell">
-                    {row[h] || "-"}
-                  </div>
-                ))}
-              </div>
-            ))}
-
+            {/* Body */}
+            <div className="sheet-body">
+              {data.map((row, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  className={`sheet-row ${rowIndex % 2 === 0 ? "even" : "odd"}`}
+                >
+                  {Object.values(row).map((value, cellIndex) => (
+                    <div key={cellIndex} className="sheet-cell">
+                      {value || "-"}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {status === "ok" && headers.length === 0 && (
+      {status === "ok" && data?.length === 0 && (
         <p>Таблица подключена, но данных нет.</p>
       )}
     </div>
