@@ -1,235 +1,119 @@
-/* ============================= */
-/*   GLOBAL RESET & BASE STYLES  */
-/* ============================= */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-}
+/* ===== ОБЩИЕ СТИЛИ ===== */
 
 body {
-  background: #f7f1e8;
-  color: #222;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  background: #f8f2e9;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  color: #222;
 }
 
-/* Заголовки */
-h1, h2, h3 {
-  font-weight: 700;
-}
-
-p {
-  color: #555;
-  line-height: 1.4;
-}
-
-
-/* ============================= */
-/*          MAIN LAYOUT         */
-/* ============================= */
-
-.app-container,
 .page-container {
-  padding: 24px;
-  max-width: 700px;
-  margin: auto;
+  padding: 20px;
 }
 
-.logo-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-  margin-bottom: 12px;
-}
-
-.logo {
-  width: 120px;
-  height: 120px;
-  border-radius: 100%;
-}
-
-
-/* ============================= */
-/*          TITLES              */
-/* ============================= */
-
-.title,
 .page-title {
-  text-align: center;
   font-size: 32px;
   font-weight: 800;
   margin-top: 10px;
-}
-
-.subtitle,
-.page-subtitle {
-  text-align: center;
-  font-size: 18px;
-  color: #666;
-  margin-bottom: 24px;
-}
-
-.section-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin-top: 20px;
-  margin-bottom: 16px;
-}
-
-
-/* ============================= */
-/*         MENU GRID            */
-/* ============================= */
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 10px;
-}
-
-.menu-card {
-  background: white;
-  padding: 18px;
-  border-radius: 18px;
-  text-align: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  transition: transform 0.15s ease, box-shadow 0.15s;
-}
-
-.menu-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-}
-
-.menu-icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 10px;
-}
-
-.menu-title {
-  font-size: 18px;
-  font-weight: 700;
   margin-bottom: 4px;
+  text-align: center;
 }
 
-.menu-subtitle {
-  color: #777;
-  font-size: 14px;
+.page-subtitle {
+  font-size: 18px;
+  opacity: 0.6;
+  margin-bottom: 20px;
+  text-align: center;
 }
-
-
-/* ============================= */
-/*         BACK LINK            */
-/* ============================= */
 
 .back-link {
   display: inline-block;
-  margin-bottom: 12px;
-  font-size: 18px;
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #2e72ff;
   text-decoration: none;
-  color: #007aff;
 }
 
-.back-link:hover {
-  text-decoration: underline;
-}
-
-
-/* ============================= */
-/*      INPUT FOR SHEETS        */
-/* ============================= */
+/* ===== INPUT + BUTTON ===== */
 
 .sheet-input-block {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin: 20px 0;
 }
 
 .sheet-input {
-  flex-grow: 1;
-  padding: 12px;
+  flex: 1;
+  padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
   font-size: 16px;
+  background: white;
 }
 
 .sheet-button {
-  background: #2bb392;
+  background: #4caf93;
   color: white;
   border: none;
-  padding: 12px 16px;
+  padding: 12px 18px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
-  cursor: pointer;
 }
 
-.sheet-button:hover {
-  background: #239f80;
+/* ===== КРАСИВАЯ ТАБЛИЦА ===== */
+
+.sheet-table-container {
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: #fff;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
-
-/* ============================= */
-/*        TABLE STYLES          */
-/* ============================= */
-
-.table-scroll {
-  overflow-x: auto;
-  background: #eef4ff;
-  padding: 12px;
-  border-radius: 14px;
-  margin-top: 20px;
-}
-
-.data-table {
+/* фиксированная шапка */
+.sheet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
 }
 
-.data-table thead {
-  background: #dce6ff;
+.sheet-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  padding: 6px 0;
 }
 
-.data-table th {
-  padding: 10px;
+.header {
+  position: sticky;
+  top: 0;
+  background: #eef3ff;
   font-weight: 700;
-  text-align: left;
-  border-bottom: 2px solid #c7d4f7;
-  white-space: nowrap;
+  z-index: 10;
+  border-bottom: 2px solid #d5ddff;
 }
 
-.data-table td {
-  padding: 8px;
-  border-bottom: 1px solid #ccc;
-  white-space: nowrap;
+/* клетки */
+.sheet-cell {
+  padding: 10px;
+  font-size: 15px;
+  border-bottom: 1px solid #f1f1f1;
 }
 
+.header-cell {
+  padding: 12px;
+  text-transform: none;
+}
 
-/* ============================= */
-/*       MOBILE ADAPTATION      */
-/* ============================= */
+/* зебра */
+.sheet-row.even {
+  background: #fafafa;
+}
 
-@media (max-width: 480px) {
-  .title,
-  .page-title {
-    font-size: 26px;
-  }
-
-  .sheet-input-block {
-    flex-direction: column;
-  }
-
-  .sheet-button {
-    width: 100%;
-  }
-
-  .menu-grid {
-    grid-template-columns: 1fr;
-  }
+/* ховер строк */
+.sheet-row:hover {
+  background: #f0f7ff;
+  transition: 0.2s;
 }
