@@ -3,18 +3,9 @@ import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [data, setData] = useState(null);
+  const [headers, setHeaders] = useState([]);
+  const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("idle");
-
-  function extractSheetId(url) {
-    try {
-      // Универсальный способ достать sheetId из любых URL форм
-      const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      return match ? match[1] : null;
-    } catch {
-      return null;
-    }
-  }
 
   async function connectSheet() {
     if (!sheetUrl.includes("docs.google.com")) {
@@ -22,25 +13,19 @@ export default function AdsPage() {
       return;
     }
 
-    const sheetId = extractSheetId(sheetUrl);
-
-    if (!sheetId) {
-      alert("Не удалось определить ID таблицы");
-      return;
-    }
-
     setStatus("loading");
 
-    const res = await fetch(`/api/sheets?sheetId=${encodeURIComponent(sheetId)}`);
+    const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
     const json = await res.json();
 
-    if (json.error) {
-      alert(json.error);
+    if (!json.success) {
+      alert(json.error || "Ошибка загрузки");
       setStatus("error");
       return;
     }
 
-    setData(json.rows || []);
+    setHeaders(json.headers);
+    setRows(json.rows);
     setStatus("ok");
   }
 
@@ -51,7 +36,7 @@ export default function AdsPage() {
       <h1 className="page-title">Реклама</h1>
       <p className="page-subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Ввод ссылки */}
+      {/* Поле для URL */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -66,29 +51,34 @@ export default function AdsPage() {
       </div>
 
       {status === "loading" && <p>Загрузка данных...</p>}
-      {status === "error" && <p>Ошибка загрузки</p>}
+      {status === "error" && <p>Ошибка загрузки данных</p>}
 
       {/* Таблица */}
-      {status === "ok" && data && (
-        <div className="sheet-table-wrapper">
-          <div className="sheet-table">
-            {data.map((row, rowIndex) => (
-              <div
-                key={rowIndex}
-                className={`sheet-row ${rowIndex === 0 ? "header" : ""}`}
-              >
-                {row.map((cell, cellIndex) => (
-                  <div key={cellIndex} className="sheet-cell">
-                    {cell || "-"}
-                  </div>
+      {status === "ok" && rows.length > 0 && (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                {headers.map((h, i) => (
+                  <th key={i}>{h}</th>
                 ))}
-              </div>
-            ))}
-          </div>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {headers.map((h, cellIndex) => (
+                    <td key={cellIndex}>{row[h] || "-"}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {status === "ok" && data?.length === 0 && (
+      {status === "ok" && rows.length === 0 && (
         <p>Таблица подключена, но данных нет.</p>
       )}
     </div>
