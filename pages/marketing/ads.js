@@ -3,29 +3,46 @@ import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [headers, setHeaders] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [data, setData] = useState(null);
   const [status, setStatus] = useState("idle");
 
   async function connectSheet() {
+    console.log("RAW sheetUrl from input:", sheetUrl);
+
     if (!sheetUrl.includes("docs.google.com")) {
       alert("Введите корректную ссылку на Google Таблицу");
       return;
     }
 
+    // 🧠 Надёжное извлечение sheetId
+    const sheetId =
+      sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
+      sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
+      sheetUrl.match(/id=([a-zA-Z0-9-_]+)/)?.[1];
+
+    console.log("Extracted sheetId:", sheetId);
+
+    if (!sheetId) {
+      alert("Не удалось определить ID таблицы");
+      return;
+    }
+
     setStatus("loading");
 
+    // 🧠 API ждёт parameter url, а не sheetId
     const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
+
     const json = await res.json();
 
-    if (!json.success) {
-      alert(json.error || "Ошибка загрузки");
+    console.log("Response from API:", json);
+
+    if (json.error) {
+      alert(json.error);
       setStatus("error");
       return;
     }
 
-    setHeaders(json.headers);
-    setRows(json.rows);
+    setData(json.rows || json.data || []);
     setStatus("ok");
   }
 
@@ -36,7 +53,7 @@ export default function AdsPage() {
       <h1 className="page-title">Реклама</h1>
       <p className="page-subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Поле для URL */}
+      {/* Поле для ссылки */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -50,35 +67,28 @@ export default function AdsPage() {
         </button>
       </div>
 
+      {/* Статусы */}
       {status === "loading" && <p>Загрузка данных...</p>}
-      {status === "error" && <p>Ошибка загрузки данных</p>}
+      {status === "error" && <p>Ошибка загрузки</p>}
 
       {/* Таблица */}
-      {status === "ok" && rows.length > 0 && (
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {headers.map((h, i) => (
-                  <th key={i}>{h}</th>
+      {status === "ok" && data && (
+        <div className="sheet-table-wrapper">
+          <div className="sheet-table">
+            {data.map((row, index) => (
+              <div key={index} className={`sheet-row ${index === 0 ? "header" : ""}`}>
+                {Object.values(row).map((cell, i) => (
+                  <div key={i} className="sheet-cell">
+                    {cell || "-"}
+                  </div>
                 ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {headers.map((h, cellIndex) => (
-                    <td key={cellIndex}>{row[h] || "-"}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {status === "ok" && rows.length === 0 && (
+      {status === "ok" && data?.length === 0 && (
         <p>Таблица подключена, но данных нет.</p>
       )}
     </div>
