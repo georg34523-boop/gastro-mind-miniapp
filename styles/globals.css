@@ -1,238 +1,147 @@
-/* ====== ОСНОВНЫЕ СТИЛИ ПРИЛОЖЕНИЯ ====== */
+/* ОБЩИЕ СТИЛИ */
 
 body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  background: #f7f8fa;
   margin: 0;
   padding: 0;
-  background: #f7f2ea; /* бежевый фон — фирменный */
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   color: #222;
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
 }
 
 .page-container {
   padding: 20px;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
-/* ====== ТИТУЛЫ И ТЕКСТ ====== */
+.back-link {
+  color: #5a67d8;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+}
 
 .page-title {
-  font-size: 30px;
-  font-weight: 800;
-  margin-top: 0;
-  margin-bottom: 6px;
-  text-align: center;
-  color: #1c1c1c;
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 10px;
 }
 
 .page-subtitle {
   font-size: 16px;
-  text-align: center;
-  opacity: 0.65;
+  opacity: 0.7;
   margin-bottom: 20px;
 }
 
-.back-link {
-  color: #3f7cff;
-  font-weight: 500;
-  font-size: 18px;
-  margin-bottom: 10px;
-  display: inline-block;
-}
-
-/* ===================================================== */
-/*          СТИЛИ ГЛАВНОГО ЭКРАНА (ОСНОВНАЯ СТР.)        */
-/* ===================================================== */
-
-.logo-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.logo {
-  width: 120px;
-  height: 120px;
-  animation: pulse 2.4s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.06); opacity: 1; }
-}
-
-.title {
-  font-size: 34px;
-  font-weight: 800;
-  text-align: center;
-  margin-top: 10px;
-}
-
-.subtitle {
-  text-align: center;
-  opacity: 0.6;
-  margin-bottom: 20px;
-}
-
-.section-title {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 18px;
-  text-align: center;
-}
-
-/* ====== GRID МЕНЮ ====== */
-
-.menu-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr 1fr;
-  padding-bottom: 40px;
-}
-
-.menu-card {
-  background: white;
-  border-radius: 18px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: 0.25s;
-}
-
-.menu-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-}
-
-.menu-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 14px;
-}
-
-.menu-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.menu-subtitle {
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-/* ===================================================== */
-/*                 БЛОКИ МАРКЕТИНГА                      */
-/* ===================================================== */
-
-.marketing-block {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.marketing-item {
-  background: #ffffff;
-  padding: 18px;
-  border-radius: 16px;
-  font-size: 18px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  transition: 0.25s;
-}
-
-.marketing-item:hover {
-  transform: translateY(-3px);
-  background: #f9f9f9;
-}
-
-/* ===================================================== */
-/*                    INPUT + BUTTON                     */
-/* ===================================================== */
+/* ИНПУТ ДЛЯ ТАБЛИЦЫ */
 
 .sheet-input-block {
   display: flex;
   gap: 10px;
-  margin: 18px 0;
+  margin-bottom: 20px;
 }
 
 .sheet-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 12px;
   border-radius: 12px;
-  border: 1px solid #ddd;
-  font-size: 16px;
-  background: white;
+  border: 1px solid #d0d0d0;
+  font-size: 15px;
 }
 
 .sheet-button {
-  background: #4caf93;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 12px 18px;
+  background: #5a67d8;
   color: white;
-  transition: 0.2s;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  cursor: pointer;
 }
 
 .sheet-button:hover {
-  background: #46a187;
+  background: #4c58c6;
 }
 
-/* ===================================================== */
-/*                  ТАБЛИЦА РЕКЛАМЫ                      */
-/* ===================================================== */
+/* СТАТУСЫ */
 
-.sheet-table-container {
-  margin-top: 12px;
+.loading-text {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.error-text {
+  color: #d9534f;
+  font-size: 16px;
+}
+
+/* KPI DASHBOARD */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.kpi-card {
   background: white;
-  border-radius: 16px;
-  padding: 10px;
-  max-height: 60vh;
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.kpi-label {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+.kpi-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* COLUMN MAP OUTPUT */
+
+.column-map-info {
+  margin-top: 30px;
+}
+
+.column-map-info pre {
+  background: #eee;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+/* TABLE (если понадобится позже) */
+
+.sheet-table-wrapper {
+  max-height: 400px;
   overflow: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 .sheet-table {
-  min-width: 800px;
+  display: grid;
+  border: 1px solid #ddd;
 }
 
 .sheet-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-  padding: 10px 0;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .sheet-row.header {
-  background: #eef3ff;
-  border-bottom: 2px solid #d5ddff;
-  font-weight: 700;
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  background: #f1f1f1;
+  font-weight: 600;
 }
 
 .sheet-cell {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  border-right: 1px solid #eee;
   font-size: 14px;
-  padding: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sheet-row.even {
-  background: #fafafa;
-}
-
-.sheet-row.odd {
-  background: #fdfdfd;
-}
-
-.sheet-row:hover {
-  background: #f0f7ff;
 }
