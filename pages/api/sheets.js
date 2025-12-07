@@ -6,11 +6,9 @@ export default async function handler(req, res) {
   try {
     const { sheetId } = req.query;
 
-    console.log("➡️ API CALLED WITH sheetId:", sheetId);
-
     if (!sheetId) {
       return res.status(400).json({
-        error: "Не указан sheetId. Пример вызова: /api/sheets?sheetId=XXXXX"
+        error: "Не указан sheetId. Пример вызова: /api/sheets?sheetId=XXXX"
       });
     }
 
@@ -25,29 +23,23 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    console.log("📡 Запрашиваем данные из Google Sheets...");
-
+    // Загружаем данные из первой страницы таблицы
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "A:ZZ",
     });
 
     const rows = response.data.values || [];
-    console.log("📊 Получено строк:", rows.length);
 
     if (rows.length === 0) {
-      return res.status(200).json({
-        data: [],
-        message: "Таблица пустая",
-      });
+      return res.status(200).json({ data: [], message: "Таблица пустая" });
     }
 
-    // Преобразуем таблицу в объекты
     const headers = rows[0];
     const items = rows.slice(1).map((row) => {
       const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = row[i] ?? "";
+      headers.forEach((head, index) => {
+        obj[head] = row[index] || "";
       });
       return obj;
     });
@@ -56,11 +48,11 @@ export default async function handler(req, res) {
       success: true,
       headers,
       rows,
-      items,
+      items
     });
 
   } catch (error) {
-    console.error("❌ SERVER ERROR:", error);
+    console.error("ERROR:", error);
     return res.status(500).json({
       error: error.message,
     });
