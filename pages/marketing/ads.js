@@ -6,13 +6,24 @@ export default function AdsPage() {
   const [data, setData] = useState(null);
   const [status, setStatus] = useState("idle");
 
+  function extractSheetId(url) {
+    try {
+      // Универсальный способ достать sheetId из любых URL форм
+      const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  }
+
   async function connectSheet() {
     if (!sheetUrl.includes("docs.google.com")) {
       alert("Введите корректную ссылку на Google Таблицу");
       return;
     }
 
-    const sheetId = sheetUrl.match(/\/d\/(.*?)\//)?.[1];
+    const sheetId = extractSheetId(sheetUrl);
+
     if (!sheetId) {
       alert("Не удалось определить ID таблицы");
       return;
@@ -20,7 +31,7 @@ export default function AdsPage() {
 
     setStatus("loading");
 
-    const res = await fetch(`/api/sheets?sheetId=${sheetId}`);
+    const res = await fetch(`/api/sheets?sheetId=${encodeURIComponent(sheetId)}`);
     const json = await res.json();
 
     if (json.error) {
@@ -40,7 +51,7 @@ export default function AdsPage() {
       <h1 className="page-title">Реклама</h1>
       <p className="page-subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Поле для URL */}
+      {/* Ввод ссылки */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -54,7 +65,6 @@ export default function AdsPage() {
         </button>
       </div>
 
-      {/* Состояния */}
       {status === "loading" && <p>Загрузка данных...</p>}
       {status === "error" && <p>Ошибка загрузки</p>}
 
