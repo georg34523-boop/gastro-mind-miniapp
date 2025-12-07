@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [data, setData] = useState(null);
+  const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("idle");
 
   async function connectSheet() {
@@ -14,7 +14,7 @@ export default function AdsPage() {
       return;
     }
 
-    // ПОДДЕРЖИВАЕМ ЛЮБОЙ ФОРМАТ ССЫЛКИ
+    // Поддерживаем разные форматы ссылок
     const sheetId =
       sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
       sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
@@ -27,18 +27,82 @@ export default function AdsPage() {
 
     setStatus("loading");
 
-    const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
-    const json = await res.json();
+    try {
+      // Отправляем ИМЕННО url, а не sheetId — так настроен /api/sheets
+      const res = await fetch(
+        `/api/sheets?url=${encodeURIComponent(sheetUrl)}`
+      );
+      const json = await res.json();
 
-    if (json.error) {
-      alert(json.error);
+      if (json.error) {
+        console.error("API error:", json);
+        alert(json.error);
+        setStatus("error");
+        return;
+      }
+
+      // НОРМАЛИЗАЦИЯ ДАННЫХ
+      let normalized = [];
+
+      // Вариант 1: бэк вернул уже объекты
+      if (Array.isArray(json.data) && json.data.length) {
+        if (
+          typeof json.data[0] === "object" &&
+          !Array.isArray(json.data[0])
+        ) {
+          normalized = json.data;
+        } else if (
+          Array.isArray(json.data[0]) &&
+          Array.isArray(json.headers)
+        ) {
+          // data = массив массивов + headers
+          normalized = json.data.map((row) => {
+            const obj = {};
+            json.headers.forEach((h, i) => {
+              obj[h] = row[i] ?? "";
+            });
+            return obj;
+          });
+        }
+      }
+
+      // Вариант 2: формат { headers, rows }
+      if (
+        !normalized.length &&
+        Array.isArray(json.rows) &&
+        Array.isArray(json.headers)
+      ) {
+        normalized = json.rows.map((row) => {
+          const obj = {};
+          json.headers.forEach((h, i) => {
+            obj[h] = row[i] ?? "";
+          });
+          return obj;
+        });
+      }
+
+      // safety: если всё равно пусто, но сервер прислал хоть что-то
+      if (
+        !normalized.length &&
+        Array.isArray(json.rows) &&
+        json.rows.length > 0
+      ) {
+        normalized = json.rows.map((row, index) => ({
+          row: index,
+          values: Array.isArray(row) ? row.join(" | ") : String(row),
+        }));
+      }
+
+      setRows(normalized);
+      setStatus("ok");
+    } catch (e) {
+      console.error("Client error:", e);
+      alert("Ошибка при загрузке данных таблицы");
       setStatus("error");
-      return;
     }
-
-    setData(json.data || []); // JSON вернёт "data"
-    setStatus("ok");
   }
+
+  const hasData = rows && rows.length > 0;
 
   return (
     <div className="page-container">
@@ -65,15 +129,17 @@ export default function AdsPage() {
 
       {/* Состояния */}
       {status === "loading" && <p>Загрузка данных...</p>}
-      {status === "error" && <p>Ошибка загрузки</p>}
+      {status === "error" && (
+        <p>Ошибка загрузки. Проверьте ссылку или доступы к таблице.</p>
+      )}
 
-      {/* ====== КРАСИВАЯ ТАБЛИЦА ====== */}
-      {status === "ok" && data && data.length > 0 && (
+      {/* Таблица */}
+      {status === "ok" && hasData && (
         <div className="sheet-table-container">
           <div className="sheet-table">
-            {/* Header */}
+            {/* Header — берём ключи из первого объекта */}
             <div className="sheet-row header">
-              {Object.keys(data[0]).map((col, i) => (
+              {Object.keys(rows[0]).map((col, i) => (
                 <div key={i} className="sheet-cell header-cell">
                   {col}
                 </div>
@@ -82,10 +148,12 @@ export default function AdsPage() {
 
             {/* Body */}
             <div className="sheet-body">
-              {data.map((row, rowIndex) => (
+              {rows.map((row, rowIndex) => (
                 <div
                   key={rowIndex}
-                  className={`sheet-row ${rowIndex % 2 === 0 ? "even" : "odd"}`}
+                  className={`sheet-row ${
+                    rowIndex % 2 === 0 ? "even" : "odd"
+                  }`}
                 >
                   {Object.values(row).map((value, cellIndex) => (
                     <div key={cellIndex} className="sheet-cell">
@@ -99,8 +167,8 @@ export default function AdsPage() {
         </div>
       )}
 
-      {status === "ok" && data?.length === 0 && (
-        <p>Таблица подключена, но данных нет.</p>
+      {status === "ok" && !hasData && (
+        <p>Таблица подключена, но данные не нашлись. Посмотрим это отдельно.</p>
       )}
     </div>
   );
