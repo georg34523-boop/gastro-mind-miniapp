@@ -4,36 +4,15 @@ import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    let { url } = req.query;
+    const { sheetId } = req.query;
 
-    console.log("RAW URL from client:", url);
+    console.log("➡️ API CALLED WITH sheetId:", sheetId);
 
-    if (!url) {
-      return res.status(400).json({ error: "Не указана ссылка на таблицу" });
-    }
-
-    // Декодируем URL
-    url = decodeURIComponent(url);
-    console.log("Decoded URL:", url);
-
-    // Проверяем что это вообще google sheets
-    if (!url.includes("docs.google.com")) {
-      return res.status(400).json({ error: "Это не ссылка Google Таблицы", urlReceived: url });
-    }
-
-    // Ищем sheetId
-    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    console.log("MATCH RESULT:", match);
-
-    if (!match || !match[1]) {
+    if (!sheetId) {
       return res.status(400).json({
-        error: "Неверная ссылка Google Таблицы — sheetId не найден",
-        urlReceived: url
+        error: "Не указан sheetId. Пример вызова: /api/sheets?sheetId=XXXXX"
       });
     }
-
-    const sheetId = match[1];
-    console.log("Extracted sheetId:", sheetId);
 
     // Авторизация Google
     const auth = new google.auth.GoogleAuth({
@@ -46,31 +25,44 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
+    console.log("📡 Запрашиваем данные из Google Sheets...");
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "A:ZZ",
     });
 
     const rows = response.data.values || [];
-    console.log("Rows length:", rows.length);
+    console.log("📊 Получено строк:", rows.length);
 
     if (rows.length === 0) {
-      return res.status(200).json({ data: [], message: "Таблица пустая" });
+      return res.status(200).json({
+        data: [],
+        message: "Таблица пустая",
+      });
     }
 
+    // Преобразуем таблицу в объекты
     const headers = rows[0];
     const items = rows.slice(1).map((row) => {
       const obj = {};
       headers.forEach((h, i) => {
-        obj[h] = row[i] || "";
+        obj[h] = row[i] ?? "";
       });
       return obj;
     });
 
-    return res.status(200).json({ data: items });
+    return res.status(200).json({
+      success: true,
+      headers,
+      rows,
+      items,
+    });
 
   } catch (error) {
-    console.error("FULL ERROR:", error);
-    return res.status(500).json({ error: error.message });
+    console.error("❌ SERVER ERROR:", error);
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 }
