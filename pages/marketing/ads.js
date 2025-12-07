@@ -3,47 +3,39 @@ import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [data, setData] = useState(null);
+  const [headers, setHeaders] = useState([]);
+  const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("idle");
 
   async function connectSheet() {
-    console.log("RAW sheetUrl from input:", sheetUrl);
-
     if (!sheetUrl.includes("docs.google.com")) {
       alert("Введите корректную ссылку на Google Таблицу");
       return;
     }
 
-    // 🧠 Надёжное извлечение sheetId
-    const sheetId =
-      sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
-      sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
-      sheetUrl.match(/id=([a-zA-Z0-9-_]+)/)?.[1];
-
-    console.log("Extracted sheetId:", sheetId);
-
-    if (!sheetId) {
-      alert("Не удалось определить ID таблицы");
-      return;
-    }
-
     setStatus("loading");
 
-    // 🧠 API ждёт parameter url, а не sheetId
-    const res = await fetch(`/api/sheets?url=${encodeURIComponent(sheetUrl)}`);
+    try {
+      const res = await fetch(
+        `/api/sheets?url=${encodeURIComponent(sheetUrl)}`
+      );
 
-    const json = await res.json();
+      const json = await res.json();
+      console.log("CLIENT RECEIVED:", json);
 
-    console.log("Response from API:", json);
+      if (json.error) {
+        alert(json.error);
+        setStatus("error");
+        return;
+      }
 
-    if (json.error) {
-      alert(json.error);
+      setHeaders(json.headers || []);
+      setRows(json.rows || []);
+      setStatus("ok");
+    } catch (e) {
+      alert("Ошибка загрузки данных");
       setStatus("error");
-      return;
     }
-
-    setData(json.rows || json.data || []);
-    setStatus("ok");
   }
 
   return (
@@ -53,7 +45,7 @@ export default function AdsPage() {
       <h1 className="page-title">Реклама</h1>
       <p className="page-subtitle">Данные из вашей Google Таблицы</p>
 
-      {/* Поле для ссылки */}
+      {/* Поле ввода */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -62,33 +54,45 @@ export default function AdsPage() {
           onChange={(e) => setSheetUrl(e.target.value)}
           className="sheet-input"
         />
+
         <button onClick={connectSheet} className="sheet-button">
           Подключить таблицу
         </button>
       </div>
 
-      {/* Статусы */}
-      {status === "loading" && <p>Загрузка данных...</p>}
-      {status === "error" && <p>Ошибка загрузки</p>}
+      {status === "loading" && <p>Загрузка...</p>}
+      {status === "error" && <p>Ошибка загрузки данных</p>}
 
-      {/* Таблица */}
-      {status === "ok" && data && (
+      {/* ТАБЛИЦА */}
+      {status === "ok" && headers.length > 0 && (
         <div className="sheet-table-wrapper">
           <div className="sheet-table">
-            {data.map((row, index) => (
-              <div key={index} className={`sheet-row ${index === 0 ? "header" : ""}`}>
-                {Object.values(row).map((cell, i) => (
-                  <div key={i} className="sheet-cell">
-                    {cell || "-"}
+
+            {/* Заголовки */}
+            <div className="sheet-row header">
+              {headers.map((h, i) => (
+                <div key={i} className="sheet-cell header-cell">
+                  {h}
+                </div>
+              ))}
+            </div>
+
+            {/* Данные */}
+            {rows.map((row, rowIndex) => (
+              <div key={rowIndex} className="sheet-row">
+                {headers.map((h, colIndex) => (
+                  <div key={colIndex} className="sheet-cell">
+                    {row[h] || "-"}
                   </div>
                 ))}
               </div>
             ))}
+
           </div>
         </div>
       )}
 
-      {status === "ok" && data?.length === 0 && (
+      {status === "ok" && headers.length === 0 && (
         <p>Таблица подключена, но данных нет.</p>
       )}
     </div>
