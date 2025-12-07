@@ -1,12 +1,11 @@
-// pages/ads.js
-
 import { useState } from "react";
 import Link from "next/link";
 
 export default function AdsPage() {
   const [sheetUrl, setSheetUrl] = useState("");
-  const [rows, setRows] = useState([]);
   const [status, setStatus] = useState("idle");
+  const [kpi, setKpi] = useState(null);
+  const [columnMap, setColumnMap] = useState(null);
 
   async function connectSheet() {
     if (!sheetUrl.includes("docs.google.com")) {
@@ -14,106 +13,55 @@ export default function AdsPage() {
       return;
     }
 
-    // Поддерживаем разные форматы ссылок
-    const sheetId =
-      sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
-      sheetUrl.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ||
-      sheetUrl.match(/id=([a-zA-Z0-9-_]+)/)?.[1];
-
-    if (!sheetId) {
-      alert("Не удалось определить ID таблицы");
-      return;
-    }
-
     setStatus("loading");
 
     try {
-      // Отправляем ИМЕННО url, а не sheetId — так настроен /api/sheets
-      const res = await fetch(
-        `/api/sheets?url=${encodeURIComponent(sheetUrl)}`
-      );
-      const json = await res.json();
+      // 1️⃣ Тянем таблицу
+      const sheetRes = await fetch("/api/sheets?url=" + encodeURIComponent(sheetUrl));
+      const sheetJson = await sheetRes.json();
 
-      if (json.error) {
-        console.error("API error:", json);
-        alert(json.error);
+      if (sheetJson.error) {
+        alert(sheetJson.error);
         setStatus("error");
         return;
       }
 
-      // НОРМАЛИЗАЦИЯ ДАННЫХ
-      let normalized = [];
+      // 2️⃣ Посылаем таблицу в GPT-парсер
+      const aiRes = await fetch("/api/ads/ai-parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          headers: sheetJson.headers,
+          rows: sheetJson.rows,
+        }),
+      });
 
-      // Вариант 1: бэк вернул уже объекты
-      if (Array.isArray(json.data) && json.data.length) {
-        if (
-          typeof json.data[0] === "object" &&
-          !Array.isArray(json.data[0])
-        ) {
-          normalized = json.data;
-        } else if (
-          Array.isArray(json.data[0]) &&
-          Array.isArray(json.headers)
-        ) {
-          // data = массив массивов + headers
-          normalized = json.data.map((row) => {
-            const obj = {};
-            json.headers.forEach((h, i) => {
-              obj[h] = row[i] ?? "";
-            });
-            return obj;
-          });
-        }
+      const aiJson = await aiRes.json();
+
+      if (aiJson.error) {
+        alert(aiJson.error);
+        setStatus("error");
+        return;
       }
 
-      // Вариант 2: формат { headers, rows }
-      if (
-        !normalized.length &&
-        Array.isArray(json.rows) &&
-        Array.isArray(json.headers)
-      ) {
-        normalized = json.rows.map((row) => {
-          const obj = {};
-          json.headers.forEach((h, i) => {
-            obj[h] = row[i] ?? "";
-          });
-          return obj;
-        });
-      }
-
-      // safety: если всё равно пусто, но сервер прислал хоть что-то
-      if (
-        !normalized.length &&
-        Array.isArray(json.rows) &&
-        json.rows.length > 0
-      ) {
-        normalized = json.rows.map((row, index) => ({
-          row: index,
-          values: Array.isArray(row) ? row.join(" | ") : String(row),
-        }));
-      }
-
-      setRows(normalized);
+      setKpi(aiJson.kpi);
+      setColumnMap(aiJson.columnMap);
       setStatus("ok");
     } catch (e) {
-      console.error("Client error:", e);
-      alert("Ошибка при загрузке данных таблицы");
+      console.error(e);
       setStatus("error");
+      alert("Произошла ошибка.");
     }
   }
 
-  const hasData = rows && rows.length > 0;
-
   return (
     <div className="page-container">
-      <Link href="/marketing" className="back-link">
-        ← Назад
-      </Link>
+      <Link href="/marketing" className="back-link">← Назад</Link>
 
       <h1 className="page-title">Реклама</h1>
-      <p className="page-subtitle">Данные из вашей Google Таблицы</p>
+      <p className="page-subtitle">Подключите таблицу — AI сделает анализ автоматически</p>
 
-      {/* Поле для URL */}
+      {/* URL input */}
       <div className="sheet-input-block">
         <input
           type="text"
@@ -123,52 +71,68 @@ export default function AdsPage() {
           className="sheet-input"
         />
         <button onClick={connectSheet} className="sheet-button">
-          Подключить таблицу
+          Подключить
         </button>
       </div>
 
-      {/* Состояния */}
-      {status === "loading" && <p>Загрузка данных...</p>}
-      {status === "error" && (
-        <p>Ошибка загрузки. Проверьте ссылку или доступы к таблице.</p>
-      )}
+      {status === "loading" && <p className="loading-text">Загрузка данных...</p>}
+      {status === "error" && <p className="error-text">Ошибка при анализе данных.</p>}
 
-      {/* Таблица */}
-      {status === "ok" && hasData && (
-        <div className="sheet-table-container">
-          <div className="sheet-table">
-            {/* Header — берём ключи из первого объекта */}
-            <div className="sheet-row header">
-              {Object.keys(rows[0]).map((col, i) => (
-                <div key={i} className="sheet-cell header-cell">
-                  {col}
-                </div>
-              ))}
-            </div>
+      {/* ДАШБОРД KPI */}
+      {status === "ok" && kpi && (
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <div className="kpi-label">Показы</div>
+            <div className="kpi-value">{kpi.impressions}</div>
+          </div>
 
-            {/* Body */}
-            <div className="sheet-body">
-              {rows.map((row, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className={`sheet-row ${
-                    rowIndex % 2 === 0 ? "even" : "odd"
-                  }`}
-                >
-                  {Object.values(row).map((value, cellIndex) => (
-                    <div key={cellIndex} className="sheet-cell">
-                      {value || "-"}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+          <div className="kpi-card">
+            <div className="kpi-label">Клики</div>
+            <div className="kpi-value">{kpi.clicks}</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">CTR</div>
+            <div className="kpi-value">{kpi.ctr}%</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Расходы</div>
+            <div className="kpi-value">{kpi.spend} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Цена клика</div>
+            <div className="kpi-value">{kpi.cpc} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Лиды</div>
+            <div className="kpi-value">{kpi.leads}</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">CPL</div>
+            <div className="kpi-value">{kpi.cpl} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Доход</div>
+            <div className="kpi-value">{kpi.revenue} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">ROAS</div>
+            <div className="kpi-value">{kpi.roas}x</div>
           </div>
         </div>
       )}
 
-      {status === "ok" && !hasData && (
-        <p>Таблица подключена, но данные не нашлись. Посмотрим это отдельно.</p>
+      {status === "ok" && columnMap && (
+        <div className="column-map-info">
+          <h3>AI нашёл такие столбцы:</h3>
+          <pre>{JSON.stringify(columnMap, null, 2)}</pre>
+        </div>
       )}
     </div>
   );
