@@ -6,6 +6,7 @@ export default function AdsPage() {
   const [status, setStatus] = useState("idle");
   const [kpi, setKpi] = useState(null);
   const [columnMap, setColumnMap] = useState(null);
+  const [aiInsights, setAiInsights] = useState(null); // 🤖 новый блок аналитики
 
   async function connectSheet() {
     if (!sheetUrl.includes("docs.google.com")) {
@@ -14,9 +15,12 @@ export default function AdsPage() {
     }
 
     setStatus("loading");
+    setKpi(null);
+    setColumnMap(null);
+    setAiInsights(null);
 
     try {
-      // 1️⃣ Тянем таблицу
+      // 1️⃣ Тянем данные таблицы
       const sheetRes = await fetch("/api/sheets?url=" + encodeURIComponent(sheetUrl));
       const sheetJson = await sheetRes.json();
 
@@ -26,7 +30,7 @@ export default function AdsPage() {
         return;
       }
 
-      // 2️⃣ Посылаем таблицу в GPT-парсер
+      // 2️⃣ Отправляем таблицу в AI-парсер
       const aiRes = await fetch("/api/ads/ai-parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,20 +50,28 @@ export default function AdsPage() {
 
       setKpi(aiJson.kpi);
       setColumnMap(aiJson.columnMap);
+
+      // 3️⃣ AI-инсайты (вариант C — лёгкая версия)
+      if (aiJson.summary) {
+        setAiInsights(aiJson.summary);
+      }
+
       setStatus("ok");
     } catch (e) {
       console.error(e);
-      setStatus("error");
       alert("Произошла ошибка.");
+      setStatus("error");
     }
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container ads-container">
       <Link href="/marketing" className="back-link">← Назад</Link>
 
       <h1 className="page-title">Реклама</h1>
-      <p className="page-subtitle">Подключите таблицу — AI сделает анализ автоматически</p>
+      <p className="page-subtitle">
+        Подключите таблицу — AI автоматически сделает анализ
+      </p>
 
       {/* URL input */}
       <div className="sheet-input-block">
@@ -70,70 +82,57 @@ export default function AdsPage() {
           onChange={(e) => setSheetUrl(e.target.value)}
           className="sheet-input"
         />
-        <button onClick={connectSheet} className="sheet-button">
-          Подключить
+        <button
+          onClick={connectSheet}
+          className="sheet-button"
+          disabled={status === "loading"}
+        >
+          {status === "loading" ? "Анализ..." : "Подключить"}
         </button>
       </div>
 
-      {status === "loading" && <p className="loading-text">Загрузка данных...</p>}
-      {status === "error" && <p className="error-text">Ошибка при анализе данных.</p>}
+      {status === "loading" && <p className="loading-text">Загрузка...</p>}
+      {status === "error" && <p className="error-text">Ошибка анализа данных.</p>}
 
-      {/* ДАШБОРД KPI */}
+      {/* KPI DASHBOARD */}
       {status === "ok" && kpi && (
         <div className="kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-label">Показы</div>
-            <div className="kpi-value">{kpi.impressions}</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">Клики</div>
-            <div className="kpi-value">{kpi.clicks}</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">CTR</div>
-            <div className="kpi-value">{kpi.ctr}%</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">Расходы</div>
-            <div className="kpi-value">{kpi.spend} €</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">Цена клика</div>
-            <div className="kpi-value">{kpi.cpc} €</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">Лиды</div>
-            <div className="kpi-value">{kpi.leads}</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">CPL</div>
-            <div className="kpi-value">{kpi.cpl} €</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">Доход</div>
-            <div className="kpi-value">{kpi.revenue} €</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label">ROAS</div>
-            <div className="kpi-value">{kpi.roas}x</div>
-          </div>
+          <KpiCard label="Показы" value={kpi.impressions} />
+          <KpiCard label="Клики" value={kpi.clicks} />
+          <KpiCard label="CTR" value={kpi.ctr + "%"} />
+          <KpiCard label="Расходы" value={kpi.spend + " €"} />
+          <KpiCard label="Цена клика" value={kpi.cpc + " €"} />
+          <KpiCard label="Лиды" value={kpi.leads} />
+          <KpiCard label="CPL" value={kpi.cpl + " €"} />
+          <KpiCard label="Доход" value={kpi.revenue + " €"} />
+          <KpiCard label="ROAS" value={kpi.roas + "x"} />
         </div>
       )}
 
+      {/* AI нашёл такие столбцы */}
       {status === "ok" && columnMap && (
         <div className="column-map-info">
-          <h3>AI нашёл такие столбцы:</h3>
+          <h3>AI определил столбцы:</h3>
           <pre>{JSON.stringify(columnMap, null, 2)}</pre>
         </div>
       )}
+
+      {/* 🤖 БЛОК AI-АНАЛИТИКИ */}
+      {status === "ok" && aiInsights && (
+        <div className="ai-box">
+          <h3 className="ai-title">AI-анализ кампании</h3>
+          <p className="ai-text">{aiInsights}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KpiCard({ label, value }) {
+  return (
+    <div className="kpi-card">
+      <div className="kpi-label">{label}</div>
+      <div className="kpi-value">{value ?? "—"}</div>
     </div>
   );
 }
