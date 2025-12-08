@@ -1,39 +1,236 @@
-/* ОБЩИЕ СТИЛИ */
+/* =====================
+   БАЗА
+   ===================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  background: #f7f8fa;
   margin: 0;
   padding: 0;
-  color: #222;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+  background: #f7f8fa;
+  color: #111827;
 }
 
-.page-container {
-  padding: 20px;
-  max-width: 420px;
-  margin: 0 auto;
-}
-
-.back-link {
-  color: #5a67d8;
+/* ссылки не синие и без подчёркивания */
+a {
+  color: inherit;
   text-decoration: none;
-  font-size: 16px;
+}
+
+/* Общий контейнер для внутренних страниц (Реклама и т.п.) */
+.page-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+/* ссылка «Назад» */
+.back-link {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #5a67d8;
+  font-size: 15px;
   font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
 }
 
 .page-title {
   font-size: 26px;
-  font-weight: 700;
-  margin-top: 10px;
+  font-weight: 800;
+  margin: 8px 0 4px;
 }
 
 .page-subtitle {
-  font-size: 16px;
-  opacity: 0.7;
-  margin-bottom: 20px;
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0 0 18px;
 }
 
-/* ИНПУТ ДЛЯ ТАБЛИЦЫ */
+/* =====================
+   ГЛАВНЫЙ ЭКРАН (index)
+   ===================== */
+
+.app-container {
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 16px 40px;
+  background: #fdf6ec;
+  position: relative;
+  overflow: hidden;
+}
+
+/* большой круг с логотипом сверху */
+.logo-wrapper {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: #62c3c5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.logo {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 16px;
+  text-align: center;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+}
+
+/* карточки разделов на главной */
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.menu-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 16px 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 150px;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.menu-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: block;
+  margin-bottom: 18px;
+}
+
+.menu-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.menu-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* =====================
+   СТРАНИЦА "МАРКЕТИНГ"
+   ===================== */
+
+.marketing-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  background: #fdf6ec;
+  min-height: 100vh;
+}
+
+.marketing-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 8px 0 4px;
+}
+
+.marketing-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0 0 18px;
+}
+
+.marketing-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+/* карточки внутри маркетинга (Реклама / Соцсети / Отзывы / Стратегии) */
+
+.marketing-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.marketing-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+}
+
+.marketing-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  flex-shrink: 0;
+}
+
+.marketing-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.marketing-card-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* =====================
+   ОБЩИЕ СТИЛИ ДЛЯ РЕКЛАМЫ
+   (старый блок, который уже хорошо работал)
+   ===================== */
+
+/* Инпут/кнопка, статусы, простая сетка KPI —
+   это то, что использует AdsPage сейчас */
 
 .sheet-input-block {
   display: flex;
@@ -63,8 +260,6 @@ body {
   background: #4c58c6;
 }
 
-/* СТАТУСЫ */
-
 .loading-text {
   font-size: 16px;
   opacity: 0.7;
@@ -74,8 +269,6 @@ body {
   color: #d9534f;
   font-size: 16px;
 }
-
-/* KPI DASHBOARD */
 
 .kpi-grid {
   display: grid;
@@ -88,7 +281,7 @@ body {
   background: white;
   padding: 14px;
   border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
 }
 
@@ -103,21 +296,26 @@ body {
   margin-top: 6px;
 }
 
-/* COLUMN MAP OUTPUT */
+/* блок с отображением columnMap */
 
 .column-map-info {
   margin-top: 30px;
 }
 
+.column-map-info h3 {
+  margin: 0 0 8px;
+}
+
 .column-map-info pre {
-  background: #eee;
+  background: #111827;
+  color: #e5e7eb;
   padding: 14px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 12px;
   overflow-x: auto;
 }
 
-/* TABLE (если понадобится позже) */
+/* таблица (если когда-то понадобится снова) */
 
 .sheet-table-wrapper {
   max-height: 400px;
@@ -144,184 +342,4 @@ body {
   border-bottom: 1px solid #eee;
   border-right: 1px solid #eee;
   font-size: 14px;
-}
-
-/* ===================== */
-/*   Ads dashboard page   */
-/* ===================== */
-
-.ads-page {
-  min-height: 100vh;
-  padding: 20px 16px 32px;
-  background: #f5f5fa;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", sans-serif;
-  color: #121212;
-  box-sizing: border-box;
-}
-
-/* Верхняя часть */
-
-.ads-top {
-  max-width: 1024px;
-  margin: 0 auto 24px;
-}
-
-.ads-back {
-  display: inline-block;
-  margin-bottom: 8px;
-  font-size: 15px;
-  color: #5f6afc;
-  text-decoration: none;
-}
-
-.ads-back:hover {
-  text-decoration: underline;
-}
-
-.ads-title {
-  font-size: 26px;
-  font-weight: 800;
-  margin: 0 0 4px;
-}
-
-.ads-subtitle {
-  margin: 0 0 16px;
-  font-size: 15px;
-  color: #666a80;
-}
-
-.ads-url-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.ads-input {
-  flex: 1;
-  padding: 12px 14px;
-  border-radius: 999px;
-  border: 1px solid #d2d5f0;
-  background: #ffffff;
-  font-size: 14px;
-  outline: none;
-}
-
-.ads-input:focus {
-  border-color: #5f6afc;
-  box-shadow: 0 0 0 1px rgba(95, 106, 252, 0.2);
-}
-
-.ads-connect-btn {
-  padding: 12px 20px;
-  border-radius: 999px;
-  border: none;
-  background: #5f6afc;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: transform 0.1s ease, box-shadow 0.1s ease,
-    background 0.15s ease;
-  box-shadow: 0 8px 20px rgba(95, 106, 252, 0.25);
-}
-
-.ads-connect-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 4px 10px rgba(95, 106, 252, 0.25);
-}
-
-.ads-connect-btn:disabled {
-  opacity: 0.7;
-  cursor: default;
-  box-shadow: none;
-}
-
-.ads-error {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #d93025;
-}
-
-/* Секции */
-
-.ads-section {
-  max-width: 1024px;
-  margin: 0 auto 24px;
-}
-
-.ads-section-title {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
-/* KPI grid */
-
-.ads-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.ads-kpi-card {
-  background: #ffffff;
-  border-radius: 22px;
-  padding: 14px 16px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 82px;
-}
-
-.ads-kpi-card.wide {
-  grid-column: span 2;
-}
-
-@media (max-width: 640px) {
-  .ads-kpi-card.wide {
-    grid-column: span 1;
-  }
-}
-
-.ads-kpi-label {
-  font-size: 13px;
-  color: #8b8fa8;
-  margin-bottom: 6px;
-}
-
-.ads-kpi-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #151826;
-}
-
-.ads-kpi-value.big {
-  font-size: 22px;
-}
-
-.ads-kpi-value.accent {
-  color: #22c55e;
-}
-
-.ads-kpi-value.roas {
-  color: #0f766e;
-}
-
-/* Блок AI-мэппинга */
-
-.ads-mapping-block {
-  background: #111827;
-  color: #e5e7eb;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35);
 }
