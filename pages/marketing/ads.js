@@ -6,21 +6,22 @@ export default function AdsPage() {
   const [status, setStatus] = useState("idle");
   const [kpi, setKpi] = useState(null);
   const [columnMap, setColumnMap] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // ============================
-  // 1. Автозагрузка сохранённой таблицы
-  // ============================
+  // -----------------------------
+  //  Загружаем сохранённую таблицу
+  // -----------------------------
   useEffect(() => {
     const saved = localStorage.getItem("ads_sheet_url");
     if (saved) {
       setSheetUrl(saved);
-      connectSheet(saved, true); // авто режим
+      connectSheet(saved, true);
     }
   }, []);
 
-  // ============================
-  // 2. Подключение таблицы
-  // ============================
+  // -----------------------------
+  //  Подключение таблицы
+  // -----------------------------
   async function connectSheet(forcedUrl = null, silent = false) {
     const url = forcedUrl || sheetUrl;
 
@@ -32,7 +33,7 @@ export default function AdsPage() {
     setStatus("loading");
 
     try {
-      // --- 1. Загружаем таблицу ---
+      // 1. Получаем таблицу
       const resSheet = await fetch("/api/sheets?url=" + encodeURIComponent(url));
       const jsonSheet = await resSheet.json();
 
@@ -42,7 +43,7 @@ export default function AdsPage() {
         return;
       }
 
-      // --- 2. Отправляем в GPT-парсер ---
+      // 2. GPT разбирает таблицу
       const resAI = await fetch("/api/ads/ai-parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,23 +61,22 @@ export default function AdsPage() {
         return;
       }
 
-      // Сохраняем в интерфейс
       setKpi(jsonAI.kpi);
       setColumnMap(jsonAI.columnMap);
       setStatus("ok");
 
-      // ⚡ Сохранение таблицы в память устройства
+      // Сохраняем URL
       localStorage.setItem("ads_sheet_url", url);
     } catch (err) {
       console.error(err);
-      if (!silent) alert("Ошибка соединения.");
+      if (!silent) alert("Ошибка соединения");
       setStatus("error");
     }
   }
 
-  // ============================
-  // 3. Удаление таблицы
-  // ============================
+  // -----------------------------
+  //  Удалить таблицу
+  // -----------------------------
   function removeSheet() {
     localStorage.removeItem("ads_sheet_url");
     setSheetUrl("");
@@ -85,54 +85,123 @@ export default function AdsPage() {
     setStatus("idle");
   }
 
-  // ============================
-  // UI
-  // ============================
+  // =============================
+  //  UI
+  // =============================
+
   return (
     <div className="page-container">
-      <Link href="/marketing" className="back-link">← Назад</Link>
 
-      <h1 className="page-title">Реклама</h1>
-      <p className="page-subtitle">Подключите таблицу — AI автоматически сделает анализ</p>
+      {/* Верхняя панель */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+        <Link href="/marketing" className="back-link">← Назад</Link>
 
-      {/* Инпут */}
-      <div className="sheet-input-block">
-        <input
-          type="text"
-          placeholder="Вставьте ссылку на Google Таблицу"
-          value={sheetUrl}
-          onChange={(e) => setSheetUrl(e.target.value)}
-          className="sheet-input"
-        />
-        <button onClick={() => connectSheet()} className="sheet-button">
-          Подключить
-        </button>
+        {status === "ok" && (
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "24px",
+              cursor: "pointer",
+              marginRight: "4px"
+            }}
+          >
+            ⋮
+          </button>
+        )}
       </div>
 
-      {/* Кнопка удалить таблицу */}
-      {sheetUrl && (
-        <button
-          onClick={removeSheet}
+      {/* Меню справа */}
+      {menuOpen && (
+        <div
           style={{
-            marginTop: "4px",
-            background: "#e11d48",
-            padding: "10px 14px",
+            position: "absolute",
+            right: "20px",
+            top: "70px",
+            background: "white",
+            padding: "12px 16px",
             borderRadius: "12px",
-            border: "none",
-            color: "white",
-            fontSize: "14px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            zIndex: 10
           }}
         >
-          Удалить таблицу
-        </button>
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              removeSheet();
+            }}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "10px 0",
+              background: "none",
+              border: "none",
+              color: "#d11a2a",
+              textAlign: "left",
+              fontSize: "15px",
+            }}
+          >
+            Удалить таблицу
+          </button>
+
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              setStatus("idle");
+            }}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "10px 0",
+              background: "none",
+              border: "none",
+              color: "#333",
+              textAlign: "left",
+              fontSize: "15px",
+            }}
+          >
+            Изменить таблицу
+          </button>
+        </div>
       )}
 
+      <h1 className="page-title">Реклама</h1>
+
+      {/* Если таблицы ещё нет — показываем ввод */}
+      {status !== "ok" && (
+        <>
+          <p className="page-subtitle">
+            Подключите таблицу — AI автоматически сделает анализ
+          </p>
+
+          <div className="sheet-input-block">
+            <input
+              type="text"
+              placeholder="Вставьте ссылку на Google Таблицу"
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              className="sheet-input"
+            />
+            <button onClick={() => connectSheet()} className="sheet-button">
+              Подключить
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Состояния */}
       {status === "loading" && <p className="loading-text">Загрузка...</p>}
       {status === "error" && <p className="error-text">Ошибка при анализе</p>}
 
-      {/* KPI DASHBOARD */}
+      {/* DASHBOARD KPI */}
       {status === "ok" && kpi && (
         <div className="kpi-grid">
+          {/* — KPI карточки (оставляем как были) — */}
           <div className="kpi-card"><div className="kpi-label">Показы</div><div className="kpi-value">{kpi.impressions}</div></div>
           <div className="kpi-card"><div className="kpi-label">Клики</div><div className="kpi-value">{kpi.clicks}</div></div>
           <div className="kpi-card"><div className="kpi-label">CTR</div><div className="kpi-value">{kpi.ctr}%</div></div>
@@ -142,14 +211,6 @@ export default function AdsPage() {
           <div className="kpi-card"><div className="kpi-label">CPL</div><div className="kpi-value">{kpi.cpl} €</div></div>
           <div className="kpi-card"><div className="kpi-label">Доход</div><div className="kpi-value">{kpi.revenue} €</div></div>
           <div className="kpi-card"><div className="kpi-label">ROAS</div><div className="kpi-value">{kpi.roas}x</div></div>
-        </div>
-      )}
-
-      {/* AI column map */}
-      {status === "ok" && columnMap && (
-        <div className="column-map-info">
-          <h3>AI нашёл такие столбцы:</h3>
-          <pre>{JSON.stringify(columnMap, null, 2)}</pre>
         </div>
       )}
     </div>
