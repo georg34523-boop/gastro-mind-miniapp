@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function AdsPage() {
+  // boot | idle | loading | error | ok
   const [sheetUrl, setSheetUrl] = useState("");
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("boot");
   const [kpi, setKpi] = useState(null);
   const [columnMap, setColumnMap] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -12,10 +13,21 @@ export default function AdsPage() {
   //  Загружаем сохранённую таблицу
   // -----------------------------
   useEffect(() => {
-    const saved = localStorage.getItem("ads_sheet_url");
-    if (saved) {
-      setSheetUrl(saved);
-      connectSheet(saved, true);
+    try {
+      const saved = typeof window !== "undefined"
+        ? localStorage.getItem("ads_sheet_url")
+        : null;
+
+      if (saved) {
+        setSheetUrl(saved);
+        // не показываем форму, сразу грузим
+        connectSheet(saved, true);
+      } else {
+        setStatus("idle");
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus("idle");
     }
   }, []);
 
@@ -78,7 +90,11 @@ export default function AdsPage() {
   //  Удалить таблицу
   // -----------------------------
   function removeSheet() {
-    localStorage.removeItem("ads_sheet_url");
+    try {
+      localStorage.removeItem("ads_sheet_url");
+    } catch (e) {
+      console.error(e);
+    }
     setSheetUrl("");
     setKpi(null);
     setColumnMap(null);
@@ -91,14 +107,17 @@ export default function AdsPage() {
 
   return (
     <div className="page-container">
-
       {/* Верхняя панель */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}>
-        <Link href="/marketing" className="back-link">← Назад</Link>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Link href="/marketing" className="back-link">
+          ← Назад
+        </Link>
 
         {status === "ok" && (
           <button
@@ -108,7 +127,7 @@ export default function AdsPage() {
               border: "none",
               fontSize: "24px",
               cursor: "pointer",
-              marginRight: "4px"
+              marginRight: "4px",
             }}
           >
             ⋮
@@ -127,7 +146,7 @@ export default function AdsPage() {
             padding: "12px 16px",
             borderRadius: "12px",
             boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            zIndex: 10
+            zIndex: 10,
           }}
         >
           <button
@@ -172,8 +191,8 @@ export default function AdsPage() {
 
       <h1 className="page-title">Реклама</h1>
 
-      {/* Если таблицы ещё нет — показываем ввод */}
-      {status !== "ok" && (
+      {/* Форма подключения показывается ТОЛЬКО когда реально idle */}
+      {status === "idle" && (
         <>
           <p className="page-subtitle">
             Подключите таблицу — AI автоматически сделает анализ
@@ -195,22 +214,68 @@ export default function AdsPage() {
       )}
 
       {/* Состояния */}
-      {status === "loading" && <p className="loading-text">Загрузка...</p>}
-      {status === "error" && <p className="error-text">Ошибка при анализе</p>}
+      {status === "loading" && (
+        <p className="loading-text">Загрузка данных...</p>
+      )}
+      {status === "error" && (
+        <p className="error-text">Ошибка при анализе данных.</p>
+      )}
 
       {/* DASHBOARD KPI */}
       {status === "ok" && kpi && (
         <div className="kpi-grid">
-          {/* — KPI карточки (оставляем как были) — */}
-          <div className="kpi-card"><div className="kpi-label">Показы</div><div className="kpi-value">{kpi.impressions}</div></div>
-          <div className="kpi-card"><div className="kpi-label">Клики</div><div className="kpi-value">{kpi.clicks}</div></div>
-          <div className="kpi-card"><div className="kpi-label">CTR</div><div className="kpi-value">{kpi.ctr}%</div></div>
-          <div className="kpi-card"><div className="kpi-label">Расходы</div><div className="kpi-value">{kpi.spend} €</div></div>
-          <div className="kpi-card"><div className="kpi-label">Цена клика</div><div className="kpi-value">{kpi.cpc} €</div></div>
-          <div className="kpi-card"><div className="kpi-label">Лиды</div><div className="kpi-value">{kpi.leads}</div></div>
-          <div className="kpi-card"><div className="kpi-label">CPL</div><div className="kpi-value">{kpi.cpl} €</div></div>
-          <div className="kpi-card"><div className="kpi-label">Доход</div><div className="kpi-value">{kpi.revenue} €</div></div>
-          <div className="kpi-card"><div className="kpi-label">ROAS</div><div className="kpi-value">{kpi.roas}x</div></div>
+          <div className="kpi-card">
+            <div className="kpi-label">Показы</div>
+            <div className="kpi-value">{kpi.impressions}</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Клики</div>
+            <div className="kpi-value">{kpi.clicks}</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">CTR</div>
+            <div className="kpi-value">{kpi.ctr}%</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Расходы</div>
+            <div className="kpi-value">{kpi.spend} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Цена клика</div>
+            <div className="kpi-value">{kpi.cpc} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Лиды</div>
+            <div className="kpi-value">{kpi.leads}</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">CPL</div>
+            <div className="kpi-value">{kpi.cpl} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">Доход</div>
+            <div className="kpi-value">{kpi.revenue} €</div>
+          </div>
+
+          <div className="kpi-card">
+            <div className="kpi-label">ROAS</div>
+            <div className="kpi-value">{kpi.roas}x</div>
+          </div>
+        </div>
+      )}
+
+      {/* Отладочная инфа по мэппингу столбцов (можно позже спрятать) */}
+      {status === "ok" && columnMap && (
+        <div className="column-map-info">
+          <h3>AI нашёл такие столбцы:</h3>
+          <pre>{JSON.stringify(columnMap, null, 2)}</pre>
         </div>
       )}
     </div>
