@@ -145,3 +145,183 @@ body {
   border-right: 1px solid #eee;
   font-size: 14px;
 }
+
+/* ===================== */
+/*   Ads dashboard page   */
+/* ===================== */
+
+.ads-page {
+  min-height: 100vh;
+  padding: 20px 16px 32px;
+  background: #f5f5fa;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+  color: #121212;
+  box-sizing: border-box;
+}
+
+/* Верхняя часть */
+
+.ads-top {
+  max-width: 1024px;
+  margin: 0 auto 24px;
+}
+
+.ads-back {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #5f6afc;
+  text-decoration: none;
+}
+
+.ads-back:hover {
+  text-decoration: underline;
+}
+
+.ads-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.ads-subtitle {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: #666a80;
+}
+
+.ads-url-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.ads-input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 999px;
+  border: 1px solid #d2d5f0;
+  background: #ffffff;
+  font-size: 14px;
+  outline: none;
+}
+
+.ads-input:focus {
+  border-color: #5f6afc;
+  box-shadow: 0 0 0 1px rgba(95, 106, 252, 0.2);
+}
+
+.ads-connect-btn {
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: none;
+  background: #5f6afc;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.1s ease, box-shadow 0.1s ease,
+    background 0.15s ease;
+  box-shadow: 0 8px 20px rgba(95, 106, 252, 0.25);
+}
+
+.ads-connect-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(95, 106, 252, 0.25);
+}
+
+.ads-connect-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+  box-shadow: none;
+}
+
+.ads-error {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #d93025;
+}
+
+/* Секции */
+
+.ads-section {
+  max-width: 1024px;
+  margin: 0 auto 24px;
+}
+
+.ads-section-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+/* KPI grid */
+
+.ads-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ads-kpi-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 82px;
+}
+
+.ads-kpi-card.wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 640px) {
+  .ads-kpi-card.wide {
+    grid-column: span 1;
+  }
+}
+
+.ads-kpi-label {
+  font-size: 13px;
+  color: #8b8fa8;
+  margin-bottom: 6px;
+}
+
+.ads-kpi-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #151826;
+}
+
+.ads-kpi-value.big {
+  font-size: 22px;
+}
+
+.ads-kpi-value.accent {
+  color: #22c55e;
+}
+
+.ads-kpi-value.roas {
+  color: #0f766e;
+}
+
+/* Блок AI-мэппинга */
+
+.ads-mapping-block {
+  background: #111827;
+  color: #e5e7eb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.35);
+}
