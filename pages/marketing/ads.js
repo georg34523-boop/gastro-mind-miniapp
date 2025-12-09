@@ -1,14 +1,24 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+/**
+ * Находим индекс колонки с датой по заголовкам
+ */
 function findDateColumn(headers = []) {
   const lower = headers.map((h) => String(h || "").toLowerCase());
   const idx = lower.findIndex(
     (h) => h.includes("дата") || h.includes("date")
   );
-  return idx === -1 ? 0 : idx; // по умолчанию первый столбец
+  return idx === -1 ? 0 : idx; // по умолчанию берём первый столбец
 }
 
+/**
+ * Парсим дату из ячейки таблицы
+ * Поддерживаем:
+ *  - 15.01.25
+ *  - 15.01.2025
+ *  - 2025-01-15
+ */
 function parseSheetDate(value) {
   if (!value) return null;
   const s = String(value).trim();
@@ -22,13 +32,23 @@ function parseSheetDate(value) {
   // dd.mm.yy или dd.mm.yyyy
   if (/^\d{2}\.\d{2}\.\d{2,4}$/.test(s)) {
     let [d, m, y] = s.split(".").map(Number);
-    if (y < 100) y += 2000;
+    if (y < 100) y += 2000; // 25 -> 2025
     return new Date(y, m - 1, d);
   }
 
-  // fallback: Date умеет кое-как парсить строки
+  // fallback: пробуем скормить JS
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Парсим дату из инпута type="date" (формат yyyy-mm-dd)
+ */
+function parseInputDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
 }
 
 export default function AdsPage() {
@@ -39,7 +59,7 @@ export default function AdsPage() {
   const [columnMap, setColumnMap] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // исходные данные таблицы целиком
+  // исходная таблица
   const [sheetData, setSheetData] = useState(null);
 
   // фильтр по датам
@@ -59,7 +79,7 @@ export default function AdsPage() {
 
       if (saved) {
         setSheetUrl(saved);
-        // сразу грузим, без показа формы
+        // сразу грузим без показа формы
         connectSheet(saved, true);
       } else {
         setStatus("idle");
@@ -71,7 +91,7 @@ export default function AdsPage() {
   }, []);
 
   // -----------------------------
-  //  Универсальный вызов GPT-парсера
+  //  Вызов GPT-парсера
   // -----------------------------
   async function runAi(headers, rows, silent = false) {
     try {
@@ -126,22 +146,23 @@ export default function AdsPage() {
         return;
       }
 
-      // сохраняем полную таблицу в состоянии
-      setSheetData({
-        headers: jsonSheet.headers || [],
-        rows: jsonSheet.rows || [],
-      });
+      // сохраняем исходные данные
+      const headers = jsonSheet.headers || [];
+      const rows = jsonSheet.rows || [];
+      setSheetData({ headers, rows });
 
       // сбрасываем фильтр
       setDateFrom("");
       setDateTo("");
       setFilterCount(null);
 
-      // считаем KPI по всей таблице
-      await runAi(jsonSheet.headers, jsonSheet.rows, silent);
+      // полный период
+      await runAi(headers, rows, silent);
 
-      // запоминаем URL
-      localStorage.setItem("ads_sheet_url", url);
+      // запомним URL
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ads_sheet_url", url);
+      }
     } catch (err) {
       console.error(err);
       if (!silent) alert("Ошибка соединения");
@@ -155,29 +176,52 @@ export default function AdsPage() {
   async function applyDateFilter() {
     if (!sheetData) return;
 
-    // если даты не заданы — считаем по всей таблице
+    const { headers, rows } = sheetData;
+
+    // если фильтр пустой — считаем по всем
     if (!dateFrom && !dateTo) {
       setFilterCount(null);
-      await runAi(sheetData.headers, sheetData.rows);
+      await runAi(headers, rows);
       return;
     }
 
-    const idx = findDateColumn(sheetData.headers);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
+    const dateColIndex = findDateColumn(headers);
+    const from = parseInputDate(dateFrom);
+    const to = parseInputDate(dateTo);
 
-    const filteredRows = sheetData.rows.filter((row) => {
-      const cell = row[idx];
+    const filteredRows = rows.filter((row) => {
+      const cell = row[dateColIndex];
       const d = parseSheetDate(cell);
       if (!d) return false;
-      if (fromDate && d < fromDate) return false;
-      if (toDate && d > toDate) return false;
+
+      // режем только по дате (часы игнорим)
+      const time = d.setHours(0, 0, 0, 0);
+      if (from && time < from.setHours(0, 0, 0, 0)) return false;
+      if (to && time > to.setHours(0, 0, 0, 0)) return false;
+
       return true;
     });
 
     setFilterCount(filteredRows.length);
 
-    await runAi(sheetData.headers, filteredRows, false);
+    if (filteredRows.length === 0) {
+      // нет строк в диапазоне — не мучаем GPT, просто обнуляем
+      setKpi({
+        impressions: 0,
+        clicks: 0,
+        ctr: 0,
+        spend: 0,
+        cpc: 0,
+        leads: 0,
+        cpl: 0,
+        revenue: 0,
+        roas: 0,
+      });
+      setStatus("ok");
+      return;
+    }
+
+    await runAi(headers, filteredRows);
   }
 
   // -----------------------------
@@ -185,7 +229,9 @@ export default function AdsPage() {
   // -----------------------------
   function removeSheet() {
     try {
-      localStorage.removeItem("ads_sheet_url");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("ads_sheet_url");
+      }
     } catch (e) {
       console.error(e);
     }
@@ -233,7 +279,7 @@ export default function AdsPage() {
         )}
       </div>
 
-      {/* Меню справа */}
+      {/* Меню с "Удалить / Изменить" */}
       {status === "ok" && menuOpen && (
         <div
           style={{
@@ -289,7 +335,7 @@ export default function AdsPage() {
 
       <h1 className="page-title">Реклама</h1>
 
-      {/* Форма подключения — только когда реально idle */}
+      {/* Форма подключения — только когда действительно idle */}
       {status === "idle" && (
         <>
           <p className="page-subtitle">
@@ -311,7 +357,7 @@ export default function AdsPage() {
         </>
       )}
 
-      {/* Состояния */}
+      {/* Статусы */}
       {status === "loading" && (
         <p className="loading-text">Загрузка данных...</p>
       )}
@@ -319,7 +365,7 @@ export default function AdsPage() {
         <p className="error-text">Ошибка при анализе данных.</p>
       )}
 
-      {/* Фильтр по датам — только когда есть данные */}
+      {/* Фильтр по датам */}
       {status === "ok" && sheetData && (
         <div
           style={{
@@ -458,7 +504,7 @@ export default function AdsPage() {
         </div>
       )}
 
-      {/* Отладочная инфа по мэппингу столбцов */}
+      {/* Отладочный блок про столбцы */}
       {status === "ok" && columnMap && (
         <div className="column-map-info">
           <h3>AI нашёл такие столбцы:</h3>
