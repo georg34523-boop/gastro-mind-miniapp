@@ -1,3 +1,4 @@
+// pages/marketing/ads.js
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -6,7 +7,6 @@ import Link from "next/link";
  */
 function findDateColumn(headers = []) {
   const lower = headers.map((h) => String(h || "").toLowerCase());
-
   const idx = lower.findIndex(
     (h) =>
       h.includes("дата") ||
@@ -15,7 +15,6 @@ function findDateColumn(headers = []) {
       h.includes("period") ||
       h.includes("период")
   );
-
   // если не нашли — вернём -1 и дальше не будем фильтровать по датам
   return idx === -1 ? -1 : idx;
 }
@@ -38,20 +37,14 @@ function parseSheetDate(value) {
   // yyyy-mm-dd или yyyy-m-d (включая варианты с временем)
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (isoMatch) {
-    const [, yStr, mStr, dStr] = isoMatch;
-    const y = Number(yStr);
-    const m = Number(mStr);
-    const d = Number(dStr);
+    const [, y, m, d] = isoMatch.map(Number);
     return new Date(y, m - 1, d);
   }
 
   // dd.mm.yy(yy) или dd/mm/yy(yy) или dd-mm-yy(yy)
   const dmMatch = s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
   if (dmMatch) {
-    let [, dStr, mStr, yStr] = dmMatch;
-    let d = Number(dStr);
-    let m = Number(mStr);
-    let y = Number(yStr);
+    let [, d, m, y] = dmMatch.map(Number);
     if (y < 100) y += 2000; // 25 -> 2025
     return new Date(y, m - 1, d);
   }
@@ -68,10 +61,7 @@ function parseInputDate(str) {
   if (!str) return null;
   const m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (!m) return null;
-  const [, yStr, moStr, dStr] = m;
-  const y = Number(yStr);
-  const mo = Number(moStr);
-  const d = Number(dStr);
+  const [, y, mo, d] = m.map(Number);
   return new Date(y, mo - 1, d);
 }
 
@@ -81,6 +71,7 @@ export default function AdsPage() {
   const [status, setStatus] = useState("boot");
   const [kpi, setKpi] = useState(null);
   const [columnMap, setColumnMap] = useState(null);
+  const [analysis, setAnalysis] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   // исходная таблица
@@ -138,6 +129,7 @@ export default function AdsPage() {
 
       setKpi(jsonAI.kpi);
       setColumnMap(jsonAI.columnMap);
+      setAnalysis(jsonAI.analysis || "");
       setStatus("ok");
     } catch (err) {
       console.error(err);
@@ -212,7 +204,6 @@ export default function AdsPage() {
 
     const dateColIndex = findDateColumn(headers);
     if (dateColIndex === -1) {
-      // не нашли колонку даты — просто считаем по всем и выходим
       alert("Не удалось определить колонку с датой в таблице.");
       setFilterCount(null);
       await runAi(headers, rows);
@@ -241,7 +232,6 @@ export default function AdsPage() {
     setFilterCount(filteredRows.length);
 
     if (filteredRows.length === 0) {
-      // нет строк в диапазоне — не мучаем GPT, просто обнуляем
       setKpi({
         impressions: 0,
         clicks: 0,
@@ -253,6 +243,9 @@ export default function AdsPage() {
         revenue: 0,
         roas: 0,
       });
+      setAnalysis(
+        "За выбранный период строк с данными не найдено. Попробуйте изменить диапазон дат."
+      );
       setStatus("ok");
       return;
     }
@@ -278,6 +271,7 @@ export default function AdsPage() {
     setDateFrom("");
     setDateTo("");
     setFilterCount(null);
+    setAnalysis("");
     setStatus("idle");
   }
 
@@ -537,6 +531,39 @@ export default function AdsPage() {
             <div className="kpi-label">ROAS</div>
             <div className="kpi-value">{kpi.roas}x</div>
           </div>
+        </div>
+      )}
+
+      {/* AI-анализ */}
+      {status === "ok" && analysis && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: 14,
+            borderRadius: 16,
+            background: "#ffffff",
+            boxShadow: "0 4px 18px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              marginBottom: 8,
+            }}
+          >
+            AI-анализ рекламы
+          </div>
+          <p
+            style={{
+              fontSize: 14,
+              lineHeight: 1.5,
+              whiteSpace: "pre-line",
+              margin: 0,
+            }}
+          >
+            {analysis}
+          </p>
         </div>
       )}
 
