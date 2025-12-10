@@ -3,6 +3,8 @@
 import { google } from "googleapis";
 
 export default async function handler(req, res) {
+  console.log("📡 Sheets API called");
+
   try {
     let { url } = req.query;
 
@@ -13,18 +15,24 @@ export default async function handler(req, res) {
     url = decodeURIComponent(url);
 
     if (!url.includes("docs.google.com")) {
-      return res.status(400).json({ error: "Это не ссылка Google Таблицы" });
+      return res.status(400).json({
+        error: "Неверная ссылка Google Таблицы",
+        urlReceived: url,
+      });
     }
 
-    // sheetId
+    // Получаем ID таблицы
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (!match) {
-      return res.status(400).json({ error: "Неверная ссылка Google Таблицы" });
+    if (!match || !match[1]) {
+      return res.status(400).json({
+        error: "Не удалось определить sheetId",
+        urlReceived: url,
+      });
     }
 
     const sheetId = match[1];
 
-    // Google auth
+    // Авторизация Google API
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -35,40 +43,69 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Read
+    // Читаем ВСЮ таблицу A:ZZ
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
       range: "A:ZZ",
     });
 
-    const rows = response.data.values || [];
+    const rowsRaw = response.data.values || [];
 
-    if (!rows.length) {
-      return res.status(200).json({ headers: [], rows: [] });
+    if (!rowsRaw || rowsRaw.length === 0) {
+      return res.status(200).json({
+        success: true,
+        headers: [],
+        rows: [],
+        message: "Таблица пустая",
+      });
     }
 
-    const headers = rows[0];
+    // ---------------------------
+    //  1) Нормализуем строки
+    // ---------------------------
 
-    // ОСНОВНОЕ: превращаем rawRows → массивы
-    // Ты прислал объектами — значит где-то у тебя AI уже преобразовал
-    // Но мы гарантируем массивы как формат по-умолчанию
-    const cleanRows = rows.slice(1).map((row) => {
-      // row может быть массивом или объектом
-      if (Array.isArray(row)) return row;
+    // Удаляем пустые строки
+    let rows = rowsRaw.filter((r) => Array.isArray(r) && r.length > 0);
 
-      // если объект — конвертируем
-      const newRow = headers.map((h) => row[h] ?? "");
-      return newRow;
+    // Убираем полностью пустые (все значения пустые)
+    rows = rows.filter((r) => r.some((cell) => String(cell || "").trim() !== ""));
+
+    // Вытаскиваем хедеры
+    const headers = rows[0] || [];
+
+    // Убираем заголовок из rows
+    const body = rows.slice(1);
+
+    // Чистим строки — убираем строки без даты
+    const clean = body.filter((row) => {
+      if (!Array.isArray(row) || row.length === 0) return false;
+      const first = String(row[0] || "").trim();
+
+      // убираем строку "Загально"
+      if (first.toLowerCase().includes("загально")) return false;
+
+      // dd.mm.yy
+      if (/^\d{2}\.\d{2}\.\d{2}$/.test(first)) return true;
+
+      // dd.mm.yyyy
+      if (/^\d{2}\.\d{2}\.\d{4}$/.test(first)) return true;
+
+      // yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}$/.test(first)) return true;
+
+      return false;
     });
 
     return res.status(200).json({
       success: true,
       headers,
-      rows: cleanRows,
+      rows: clean,
     });
 
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error("🔥 Sheets API error:", error);
+    return res.status(500).json({
+      error: "Ошибка сервера: " + error.message,
+    });
   }
 }
