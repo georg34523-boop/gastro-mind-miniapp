@@ -1,510 +1,325 @@
-import { useState, useEffect } from "react";
+// pages/marketing/ads.js
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-/**
- * Находим индекс колонки с датой по заголовкам
- */
-function findDateColumn(headers = []) {
-  const lower = headers.map((h) => String(h || "").toLowerCase());
-  const idx = lower.findIndex(
-    (h) => h.includes("дата") || h.includes("date")
-  );
-  return idx === -1 ? 0 : idx; // по умолчанию берём первый столбец
-}
-
-/**
- * Парсим дату из ячейки таблицы
- * Поддерживаем:
- *  - 15.01.25
- *  - 15.01.2025
- *  - 2025-01-15
- */
-function parseSheetDate(value) {
-  if (!value) return null;
-  const s = String(value).trim();
-
-  // yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split("-").map(Number);
-    return new Date(y, m - 1, d);
-  }
-
-  // dd.mm.yy или dd.mm.yyyy
-  if (/^\d{2}\.\d{2}\.\d{2,4}$/.test(s)) {
-    let [d, m, y] = s.split(".").map(Number);
-    if (y < 100) y += 2000; // 25 -> 2025
-    return new Date(y, m - 1, d);
-  }
-
-  // fallback: пробуем скормить JS
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-/**
- * Парсим дату из инпута type="date" (формат yyyy-mm-dd)
- */
-function parseInputDate(str) {
-  if (!str) return null;
-  const [y, m, d] = str.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d);
-}
+const STORAGE_KEY = "gastroMind_ads_sheet_url";
 
 export default function AdsPage() {
-  // boot | idle | loading | error | ok
   const [sheetUrl, setSheetUrl] = useState("");
-  const [status, setStatus] = useState("boot");
-  const [kpi, setKpi] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | loading | ok | error
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [headers, setHeaders] = useState([]);
+  const [rows, setRows] = useState([]);
   const [columnMap, setColumnMap] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
-  // исходная таблица
-  const [sheetData, setSheetData] = useState(null);
+  const [baseKpi, setBaseKpi] = useState(null);   // KPI по всей таблице
+  const [kpi, setKpi] = useState(null);           // KPI с учётом фильтра дат
 
-  // фильтр по датам
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [filterCount, setFilterCount] = useState(null);
+  const [dateColumnIndex, setDateColumnIndex] = useState(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-  // -----------------------------
-  //  Загружаем сохранённую таблицу
-  // -----------------------------
+  const [showInput, setShowInput] = useState(false); // чтобы не мигал инпут при автоподключении
+
+  // ---- 1. Восстанавливаем сохранённую таблицу при загрузке ----
   useEffect(() => {
-    try {
-      const saved =
-        typeof window !== "undefined"
-          ? localStorage.getItem("ads_sheet_url")
-          : null;
+    if (typeof window === "undefined") return;
+    const savedUrl = window.localStorage.getItem(STORAGE_KEY);
 
-      if (saved) {
-        setSheetUrl(saved);
-        // сразу грузим без показа формы
-        connectSheet(saved, true);
-      } else {
-        setStatus("idle");
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus("idle");
+    if (savedUrl) {
+      setSheetUrl(savedUrl);
+      // не показываем инпут, сразу пробуем подключиться «тихо»
+      connectSheet(savedUrl, { silent: true });
+    } else {
+      setShowInput(true);
     }
   }, []);
 
-  // -----------------------------
-  //  Вызов GPT-парсера
-  // -----------------------------
-  async function runAi(headers, rows, silent = false) {
-    try {
-      setStatus("loading");
+  // ---- 2. Подключение таблицы ----
+  async function connectSheet(urlOverride, options = {}) {
+    const url = (urlOverride || sheetUrl || "").trim();
 
-      const resAI = await fetch("/api/ads/ai-parse", {
+    if (!url) {
+      alert("Вставьте ссылку на Google Таблицу");
+      return;
+    }
+    if (!url.includes("docs.google.com")) {
+      alert("Введите корректную ссылку на Google Таблицу");
+      return;
+    }
+
+    setErrorMessage("");
+    if (!options.silent) setStatus("loading");
+
+    try {
+      // 2.1. Тянем таблицу из /api/sheets
+      const sheetRes = await fetch("/api/sheets?url=" + encodeURIComponent(url));
+      const sheetJson = await sheetRes.json();
+
+      if (sheetJson.error) {
+        throw new Error(sheetJson.error);
+      }
+
+      setHeaders(sheetJson.headers || []);
+      setRows(sheetJson.rows || []);
+
+      // 2.2. Отправляем часть данных в AI-парсер,
+      //       чтобы он сказал, какой столбец — показы, клики, расходы и т.д.
+      const aiRes = await fetch("/api/ads/ai-parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headers, rows }),
+        body: JSON.stringify({
+          headers: sheetJson.headers,
+          rows: (sheetJson.rows || []).slice(0, 50), // достаточно сэмпла
+        }),
       });
 
-      const jsonAI = await resAI.json();
-
-      if (jsonAI.error) {
-        if (!silent) alert(jsonAI.error);
-        setStatus("error");
-        return;
+      const aiJson = await aiRes.json();
+      if (aiJson.error) {
+        throw new Error(aiJson.error);
       }
 
-      setKpi(jsonAI.kpi);
-      setColumnMap(jsonAI.columnMap);
+      const map = aiJson.columnMap || {};
+      setColumnMap(map);
+
+      // 2.3. Находим столбец даты (по названию)
+      const dateIdx = detectDateColumnIndex(sheetJson.headers, map);
+      setDateColumnIndex(dateIdx);
+
+      // 2.4. Считаем базовые KPI по всей таблице
+      const fullKpi = computeKpi(sheetJson.headers, sheetJson.rows, map, dateIdx, null, null);
+      setBaseKpi(fullKpi);
+      setKpi(fullKpi);
+
       setStatus("ok");
-    } catch (err) {
-      console.error(err);
-      if (!silent) alert("Ошибка соединения");
-      setStatus("error");
-    }
-  }
+      setShowInput(false);
 
-  // -----------------------------
-  //  Подключение таблицы
-  // -----------------------------
-  async function connectSheet(forcedUrl = null, silent = false) {
-    const url = forcedUrl || sheetUrl;
-
-    if (!url.includes("docs.google.com")) {
-      if (!silent) alert("Введите корректную ссылку на Google Таблицу");
-      return;
-    }
-
-    setStatus("loading");
-
-    try {
-      const resSheet = await fetch(
-        "/api/sheets?url=" + encodeURIComponent(url)
-      );
-      const jsonSheet = await resSheet.json();
-
-      if (jsonSheet.error) {
-        if (!silent) alert(jsonSheet.error);
-        setStatus("error");
-        return;
-      }
-
-      // сохраняем исходные данные
-      const headers = jsonSheet.headers || [];
-      const rows = jsonSheet.rows || [];
-      setSheetData({ headers, rows });
-
-      // сбрасываем фильтр
-      setDateFrom("");
-      setDateTo("");
-      setFilterCount(null);
-
-      // полный период
-      await runAi(headers, rows, silent);
-
-      // запомним URL
       if (typeof window !== "undefined") {
-        localStorage.setItem("ads_sheet_url", url);
+        window.localStorage.setItem(STORAGE_KEY, url);
       }
     } catch (err) {
       console.error(err);
-      if (!silent) alert("Ошибка соединения");
       setStatus("error");
+      setErrorMessage(err.message || "Ошибка при подключении таблицы");
     }
   }
 
-  // -----------------------------
-  //  Применить фильтр по датам
-  // -----------------------------
-  async function applyDateFilter() {
-    if (!sheetData) return;
-
-    const { headers, rows } = sheetData;
-
-    // если фильтр пустой — считаем по всем
-    if (!dateFrom && !dateTo) {
-      setFilterCount(null);
-      await runAi(headers, rows);
-      return;
-    }
-
-    const dateColIndex = findDateColumn(headers);
-    const from = parseInputDate(dateFrom);
-    const to = parseInputDate(dateTo);
-
-    const filteredRows = rows.filter((row) => {
-      const cell = row[dateColIndex];
-      const d = parseSheetDate(cell);
-      if (!d) return false;
-
-      // режем только по дате (часы игнорим)
-      const time = d.setHours(0, 0, 0, 0);
-      if (from && time < from.setHours(0, 0, 0, 0)) return false;
-      if (to && time > to.setHours(0, 0, 0, 0)) return false;
-
-      return true;
-    });
-
-    setFilterCount(filteredRows.length);
-
-    if (filteredRows.length === 0) {
-      // нет строк в диапазоне — не мучаем GPT, просто обнуляем
-      setKpi({
-        impressions: 0,
-        clicks: 0,
-        ctr: 0,
-        spend: 0,
-        cpc: 0,
-        leads: 0,
-        cpl: 0,
-        revenue: 0,
-        roas: 0,
-      });
-      setStatus("ok");
-      return;
-    }
-
-    await runAi(headers, filteredRows);
-  }
-
-  // -----------------------------
-  //  Удалить таблицу
-  // -----------------------------
-  function removeSheet() {
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("ads_sheet_url");
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  // ---- 3. Сброс таблицы ----
+  function handleClearSheet() {
     setSheetUrl("");
-    setKpi(null);
-    setColumnMap(null);
-    setSheetData(null);
-    setDateFrom("");
-    setDateTo("");
-    setFilterCount(null);
     setStatus("idle");
+    setErrorMessage("");
+
+    setHeaders([]);
+    setRows([]);
+    setColumnMap(null);
+    setBaseKpi(null);
+    setKpi(null);
+
+    setDateColumnIndex(null);
+    setFromDate("");
+    setToDate("");
+
+    setShowInput(true);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
   }
 
-  // =============================
-  //  UI
-  // =============================
+  // ---- 4. Изменение фильтра по датам ----
+  function handleDateChange(type, value) {
+    if (type === "from") {
+      setFromDate(value);
+    } else {
+      setToDate(value);
+    }
 
+    if (!rows.length || !columnMap || dateColumnIndex == null) {
+      return;
+    }
+
+    const from = parseDate(type === "from" ? value : fromDate);
+    const to = parseDate(type === "to" ? value : toDate);
+
+    // если обе даты пустые — возвращаем базовый KPI
+    if (!from && !to) {
+      setKpi(baseKpi);
+      return;
+    }
+
+    const filteredKpi = computeKpi(headers, rows, columnMap, dateColumnIndex, from, to);
+    setKpi(filteredKpi);
+  }
+
+  const displayKpi = kpi || baseKpi || {
+    impressions: 0,
+    clicks: 0,
+    ctr: 0,
+    spend: 0,
+    cpc: 0,
+    leads: 0,
+    cpl: 0,
+    revenue: 0,
+    roas: 0,
+  };
+
+  const hasDateFilter = dateColumnIndex !== null;
+
+  // ---- RENDER ----
   return (
     <div className="page-container">
-      {/* Верхняя панель */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Link href="/marketing" className="back-link">
-          ← Назад
-        </Link>
+      <Link href="/marketing" className="back-link">
+        ← Назад
+      </Link>
 
-        {status === "ok" && (
+      <h1 className="page-title">Реклама</h1>
+      <p className="page-subtitle">
+        Подключите таблицу — AI автоматически сделает анализ
+      </p>
+
+      {/* Блок ввода URL только пока таблица не подключена */}
+      {showInput && (
+        <div className="sheet-input-block">
+          <input
+            type="text"
+            placeholder="Вставьте ссылку на Google Таблицу"
+            value={sheetUrl}
+            onChange={(e) => setSheetUrl(e.target.value)}
+            className="sheet-input"
+          />
           <button
-            onClick={() => setMenuOpen((v) => !v)}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "24px",
-              cursor: "pointer",
-              marginRight: "4px",
-            }}
+            onClick={() => connectSheet()}
+            className="sheet-button"
           >
-            ⋮
+            Подключить
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Меню с "Удалить / Изменить" */}
-      {status === "ok" && menuOpen && (
-        <div
-          style={{
-            position: "absolute",
-            right: "20px",
-            top: "70px",
-            background: "white",
-            padding: "12px 16px",
-            borderRadius: "12px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            zIndex: 10,
-          }}
-        >
+      {/* Кнопка удалить / привязать другую таблицу */}
+      {status === "ok" && (
+        <div style={{ marginBottom: 16 }}>
           <button
-            onClick={() => {
-              setMenuOpen(false);
-              removeSheet();
-            }}
+            onClick={handleClearSheet}
             style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 0",
-              background: "none",
+              padding: "10px 16px",
+              borderRadius: 12,
               border: "none",
-              color: "#d11a2a",
-              textAlign: "left",
-              fontSize: "15px",
+              background: "#e53e3e",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
             }}
           >
             Удалить таблицу
           </button>
-
-          <button
-            onClick={() => {
-              setMenuOpen(false);
-              setStatus("idle");
-            }}
-            style={{
-              display: "block",
-              width: "100%",
-              padding: "10px 0",
-              background: "none",
-              border: "none",
-              color: "#333",
-              textAlign: "left",
-              fontSize: "15px",
-            }}
-          >
-            Изменить таблицу
-          </button>
         </div>
       )}
 
-      <h1 className="page-title">Реклама</h1>
-
-      {/* Форма подключения — только когда действительно idle */}
-      {status === "idle" && (
-        <>
-          <p className="page-subtitle">
-            Подключите таблицу — AI автоматически сделает анализ
-          </p>
-
-          <div className="sheet-input-block">
-            <input
-              type="text"
-              placeholder="Вставьте ссылку на Google Таблицу"
-              value={sheetUrl}
-              onChange={(e) => setSheetUrl(e.target.value)}
-              className="sheet-input"
-            />
-            <button onClick={() => connectSheet()} className="sheet-button">
-              Подключить
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* Статусы */}
-      {status === "loading" && (
-        <p className="loading-text">Загрузка данных...</p>
-      )}
+      {/* Ошибка */}
       {status === "error" && (
-        <p className="error-text">Ошибка при анализе данных.</p>
+        <p className="error-text">
+          {errorMessage || "Ошибка при анализе данных."}
+        </p>
+      )}
+
+      {status === "loading" && (
+        <p className="loading-text">Загрузка и анализ данных…</p>
       )}
 
       {/* Фильтр по датам */}
-      {status === "ok" && sheetData && (
+      {status === "ok" && hasDateFilter && (
         <div
           style={{
-            marginTop: 12,
-            marginBottom: 8,
-            padding: 12,
-            borderRadius: 14,
-            background: "#f1f2ff",
+            marginBottom: 16,
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
-          <div
+          <span style={{ fontSize: 14, opacity: 0.8 }}>Период:</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => handleDateChange("from", e.target.value)}
             style={{
+              padding: "6px 10px",
+              borderRadius: 10,
+              border: "1px solid #d0d0d0",
               fontSize: 13,
-              fontWeight: 500,
-              marginBottom: 8,
-              color: "#4a4f7d",
             }}
-          >
-            Период
-          </div>
-
-          <div
+          />
+          <span>—</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => handleDateChange("to", e.target.value)}
             style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              flexWrap: "wrap",
+              padding: "6px 10px",
+              borderRadius: 10,
+              border: "1px solid #d0d0d0",
+              fontSize: 13,
             }}
-          >
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: 130,
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: "1px solid #d0d2f0",
-                fontSize: 13,
-              }}
-            />
-            <span style={{ fontSize: 13 }}>—</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: 130,
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: "1px solid #d0d2f0",
-                fontSize: 13,
-              }}
-            />
-            <button
-              onClick={applyDateFilter}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 999,
-                border: "none",
-                background: "#5a67d8",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Применить
-            </button>
-          </div>
-
-          {filterCount !== null && (
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 12,
-                color: "#6b7280",
-              }}
-            >
-              Строк в выборке: {filterCount}
-            </div>
-          )}
+          />
         </div>
       )}
 
-      {/* DASHBOARD KPI */}
-      {status === "ok" && kpi && (
+      {/* KPI DASHBOARD */}
+      {status === "ok" && (
         <div className="kpi-grid">
           <div className="kpi-card">
             <div className="kpi-label">Показы</div>
-            <div className="kpi-value">{kpi.impressions}</div>
+            <div className="kpi-value">{displayKpi.impressions}</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">Клики</div>
-            <div className="kpi-value">{kpi.clicks}</div>
+            <div className="kpi-value">{displayKpi.clicks}</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">CTR</div>
-            <div className="kpi-value">{kpi.ctr}%</div>
+            <div className="kpi-value">{displayKpi.ctr.toFixed(1)}%</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">Расходы</div>
-            <div className="kpi-value">{kpi.spend} €</div>
+            <div className="kpi-value">{displayKpi.spend.toFixed(2)} €</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">Цена клика</div>
-            <div className="kpi-value">{kpi.cpc} €</div>
+            <div className="kpi-value">{displayKpi.cpc.toFixed(2)} €</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">Лиды</div>
-            <div className="kpi-value">{kpi.leads}</div>
+            <div className="kpi-value">{displayKpi.leads}</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">CPL</div>
-            <div className="kpi-value">{kpi.cpl} €</div>
+            <div className="kpi-value">{displayKpi.cpl.toFixed(2)} €</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">Доход</div>
-            <div className="kpi-value">{kpi.revenue} €</div>
+            <div className="kpi-value">{displayKpi.revenue.toFixed(2)} €</div>
           </div>
 
           <div className="kpi-card">
             <div className="kpi-label">ROAS</div>
-            <div className="kpi-value">{kpi.roas}x</div>
+            <div className="kpi-value">{displayKpi.roas.toFixed(2)}x</div>
           </div>
         </div>
       )}
 
-      {/* Отладочный блок про столбцы */}
+      {/* Отладочная подсказка — какие столбцы нашёл AI */}
       {status === "ok" && columnMap && (
         <div className="column-map-info">
           <h3>AI нашёл такие столбцы:</h3>
@@ -513,4 +328,173 @@ export default function AdsPage() {
       )}
     </div>
   );
+}
+
+/* ============================
+   HELPERS
+   ============================ */
+
+// попытка найти столбец даты по названию
+function detectDateColumnIndex(headers = [], columnMap = {}) {
+  // если AI вдруг вернул date
+  if (columnMap.date) {
+    const target = String(columnMap.date).toLowerCase().trim();
+    const idx = headers.findIndex(
+      (h) => String(h || "").toLowerCase().trim() === target
+    );
+    if (idx !== -1) return idx;
+  }
+
+  const candidates = [
+    "date",
+    "дата",
+    "дата отчета",
+    "дата отчёта",
+    "report date",
+    "day",
+    "день",
+    "period",
+    "период",
+  ];
+
+  const norm = headers.map((h) => String(h || "").toLowerCase().trim());
+
+  for (let i = 0; i < norm.length; i++) {
+    const h = norm[i];
+    if (!h) continue;
+    if (candidates.some((w) => h.includes(w))) {
+      return i;
+    }
+  }
+
+  return null;
+}
+
+// парсим любую адекватную дату в объект Date
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+
+  let str = String(value).trim();
+
+  // ISO / yyyy-mm-dd / yyyy-mm-ddTHH:MM
+  const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  }
+
+  // форматы dd.mm.yy(yy), dd/mm/yy(yy), dd-mm-yy(yy)
+  const m2 = str.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})$/);
+  if (m2) {
+    let [, d, m, y] = m2;
+    let yearNum = Number(y);
+    if (y.length === 2) {
+      // 00–49 → 2000–2049, 50–99 → 1950–1999
+      yearNum = yearNum < 50 ? 2000 + yearNum : 1900 + yearNum;
+    }
+    return new Date(yearNum, Number(m) - 1, Number(d));
+  }
+
+  // fallback — пусть JS сам попробует
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) return parsed;
+
+  return null;
+}
+
+// приводим ячейку к числу (убираем валюту, %, пробелы)
+function toNumber(value) {
+  if (typeof value === "number") return value;
+  if (!value) return 0;
+
+  let str = String(value)
+    .replace(/\s/g, "")
+    .replace(",", ".")
+    .replace(/[^0-9.\-]/g, ""); // оставляем только цифры, точку и минус
+
+  if (!str) return 0;
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+// строим соответствие: impressions → индекс столбца и т.д.
+function buildIndexMap(headers = [], columnMap = {}) {
+  const map = {};
+  const lowerHeaders = headers.map((h) => String(h || "").toLowerCase().trim());
+
+  Object.entries(columnMap || {}).forEach(([key, headerName]) => {
+    const target = String(headerName || "").toLowerCase().trim();
+    const idx = lowerHeaders.findIndex((h) => h === target);
+    if (idx !== -1) {
+      map[key] = idx;
+    }
+  });
+
+  return map;
+}
+
+// считаем KPI по заданному диапазону дат (или по всей таблице)
+function computeKpi(headers, rows, columnMap, dateColumnIndex, from, to) {
+  if (!rows || !rows.length || !columnMap) {
+    return {
+      impressions: 0,
+      clicks: 0,
+      ctr: 0,
+      spend: 0,
+      cpc: 0,
+      leads: 0,
+      cpl: 0,
+      revenue: 0,
+      roas: 0,
+    };
+  }
+
+  const idxMap = buildIndexMap(headers, columnMap);
+
+  let impressions = 0;
+  let clicks = 0;
+  let spend = 0;
+  let leads = 0;
+  let revenue = 0;
+
+  for (const row of rows) {
+    // фильтр по датам
+    if (dateColumnIndex != null) {
+      const rawDate = row[dateColumnIndex];
+      const d = parseDate(rawDate);
+      if (!d) continue;
+
+      if (from && d < from) continue;
+      if (to) {
+        const toEnd = new Date(to);
+        toEnd.setHours(23, 59, 59, 999);
+        if (d > toEnd) continue;
+      }
+    }
+
+    if (idxMap.impressions != null)
+      impressions += toNumber(row[idxMap.impressions]);
+    if (idxMap.clicks != null) clicks += toNumber(row[idxMap.clicks]);
+    if (idxMap.spend != null) spend += toNumber(row[idxMap.spend]);
+    if (idxMap.leads != null) leads += toNumber(row[idxMap.leads]);
+    if (idxMap.revenue != null) revenue += toNumber(row[idxMap.revenue]);
+  }
+
+  const ctr = impressions ? (clicks / impressions) * 100 : 0;
+  const cpc = clicks ? spend / clicks : 0;
+  const cpl = leads ? spend / leads : 0;
+  const roas = spend ? revenue / spend : 0;
+
+  return {
+    impressions: Math.round(impressions),
+    clicks: Math.round(clicks),
+    ctr: isFinite(ctr) ? ctr : 0,
+    spend: isFinite(spend) ? spend : 0,
+    cpc: isFinite(cpc) ? cpc : 0,
+    leads: Math.round(leads),
+    cpl: isFinite(cpl) ? cpl : 0,
+    revenue: isFinite(revenue) ? revenue : 0,
+    roas: isFinite(roas) ? roas : 0,
+  };
 }
