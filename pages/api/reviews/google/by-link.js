@@ -1,5 +1,4 @@
-import { getCache, setCache } from "@/lib/cache";
-
+import { getCache, setCache } from "../../../../lib/cache";
 const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const CACHE_TTL = 60 * 60 * 6; // 6 часов
 
