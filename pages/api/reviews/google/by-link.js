@@ -1,70 +1,34 @@
 import { getCache, setCache } from "../../../../lib/cache";
-const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-const CACHE_TTL = 60 * 60 * 6; // 6 часов
 
 /**
- * Раскрываем short-link (maps.app.goo.gl → google.com/maps/...)
+ * TTL для кеша (10 минут)
  */
-async function resolveGoogleMapsUrl(url) {
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-    });
-
-    return res.url || url;
-  } catch (e) {
-    return url;
-  }
-}
+const CACHE_TTL = 10 * 60 * 1000;
 
 /**
- * Получаем placeId через Text Search (Places API New)
+ * Извлекаем Place ID из HTML Google Maps страницы
  */
-async function getPlaceIdFromUrl(finalUrl) {
-  const match = finalUrl.match(/\/place\/([^/]+)/);
-  if (!match) return null;
+async function extractPlaceIdFromHtml(url) {
+  const res = await fetch(url, {
+    redirect: "follow",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    },
+  });
 
-  const placeName = decodeURIComponent(match[1]).replace(/\+/g, " ");
+  const html = await res.text();
 
-  const res = await fetch(
-    "https://places.googleapis.com/v1/places:searchText",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_API_KEY,
-        "X-Goog-FieldMask":
-          "places.id,places.displayName,places.rating,places.userRatingCount",
-      },
-      body: JSON.stringify({
-        textQuery: placeName,
-        maxResultCount: 1,
-      }),
-    }
-  );
+  /**
+   * Google часто вставляет place_id в:
+   *  - "place_id":"ChIJ..."
+   *  - "ChIJ..." (как часть JSON)
+   */
+  const match =
+    html.match(/"place_id":"(ChI[a-zA-Z0-9_-]+)"/) ||
+    html.match(/(ChI[a-zA-Z0-9_-]{20,})/);
 
-  const json = await res.json();
-  return json.places?.[0] || null;
-}
-
-/**
- * Получаем отзывы
- */
-async function getPlaceReviews(placeId) {
-  const res = await fetch(
-    `https://places.googleapis.com/v1/places/${placeId}`,
-    {
-      headers: {
-        "X-Goog-Api-Key": GOOGLE_API_KEY,
-        "X-Goog-FieldMask":
-          "displayName,rating,userRatingCount,reviews",
-      },
-    }
-  );
-
-  const json = await res.json();
-  return json;
+  return match ? match[1] : null;
 }
 
 export default async function handler(req, res) {
@@ -75,54 +39,83 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "url is required" });
     }
 
-    const cacheKey = `google_reviews_by_link_${url}`;
+    const cacheKey = `google:by-link:${url}`;
 
+    // -----------------------------
+    //  Проверяем кеш
+    // -----------------------------
     if (!refresh) {
       const cached = getCache(cacheKey);
       if (cached) {
-        return res.status(200).json({ ...cached, cached: true });
+        return res.status(200).json({
+          ...cached,
+          cached: true,
+        });
       }
     }
 
-    // 1️⃣ раскрываем short-link
-    const resolvedUrl = await resolveGoogleMapsUrl(url);
+    // -----------------------------
+    //  Получаем Place ID
+    // -----------------------------
+    const placeId = await extractPlaceIdFromHtml(url);
 
-    // 2️⃣ получаем placeId
-    const placeInfo = await getPlaceIdFromUrl(resolvedUrl);
-    if (!placeInfo?.id) {
+    if (!placeId) {
       return res
         .status(404)
         .json({ error: "Place not found by provided link" });
     }
 
-    // 3️⃣ получаем отзывы
-    const placeData = await getPlaceReviews(placeInfo.id);
+    // -----------------------------
+    //  Запрашиваем отзывы
+    // -----------------------------
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "Google API key is not configured" });
+    }
+
+    const apiUrl = `https://places.googleapis.com/v1/places/${placeId}?fields=displayName,rating,userRatingCount,reviews&key=${apiKey}`;
+
+    const apiRes = await fetch(apiUrl);
+
+    if (!apiRes.ok) {
+      const text = await apiRes.text();
+      return res.status(500).json({
+        error: "Google Places API error",
+        details: text,
+      });
+    }
+
+    const data = await apiRes.json();
 
     const result = {
       success: true,
       place: {
-        id: placeInfo.id,
-        name: placeData.displayName?.text || placeInfo.displayName?.text,
-        rating: placeData.rating || null,
-        totalReviews: placeData.userRatingCount || 0,
+        name: data.displayName?.text || null,
+        rating: data.rating || null,
+        totalReviews: data.userRatingCount || 0,
       },
       reviews:
-        placeData.reviews?.map((r) => ({
+        (data.reviews || []).map((r) => ({
           author: r.authorAttribution?.displayName || "Anonymous",
-          rating: r.rating,
+          rating: r.rating || null,
           text: r.text?.text || "",
           language: r.text?.languageCode || null,
-          publishTime: r.publishTime,
+          publishTime: r.publishTime || null,
         })) || [],
-      cached: false,
     };
 
-    // 4️⃣ кеш
+    // -----------------------------
+    //  Сохраняем в кеш
+    // -----------------------------
     setCache(cacheKey, result, CACHE_TTL);
 
-    res.status(200).json(result);
-  } catch (e) {
-    console.error("Google by-link error:", e);
-    res.status(500).json({ error: "Internal Server Error" });
+    return res.status(200).json({
+      ...result,
+      cached: false,
+    });
+  } catch (err) {
+    console.error("Google reviews by-link error:", err);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
