@@ -1,49 +1,53 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const { placeId } = req.body;
-
-  if (!placeId) {
-    return res.status(400).json({ error: "placeId is required" });
-  }
-
   try {
+    const placeId =
+      req.method === "GET"
+        ? req.query.placeId
+        : req.body?.placeId;
+
+    if (!placeId) {
+      return res.status(400).json({
+        error: "placeId is required",
+      });
+    }
+
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-    const url = `https://places.googleapis.com/v1/places/${placeId}?fields=displayName,rating,userRatingCount,reviews&key=${apiKey}`;
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "Google Maps API key not configured",
+      });
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,reviews&language=ru&key=${apiKey}`;
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.error) {
+    if (data.status !== "OK") {
       return res.status(500).json({
-        error: "Google API error",
-        details: data.error,
+        error: data.status,
+        details: data.error_message,
       });
     }
 
-    // Нормализуем отзывы
-    const reviews =
-      data.reviews?.map((r) => ({
-        author: r.authorAttribution?.displayName || "Anonymous",
-        rating: r.rating,
-        text: r.text?.text || "",
-        language: r.text?.languageCode || "unknown",
-        time: r.publishTime,
-      })) || [];
+    const place = data.result;
 
     return res.status(200).json({
       success: true,
-      placeId,
-      name: data.displayName?.text || "",
-      rating: data.rating || null,
-      totalReviews: data.userRatingCount || 0,
-      reviews,
+      name: place.name,
+      rating: place.rating,
+      totalReviews: place.user_ratings_total,
+      reviews:
+        place.reviews?.map((r) => ({
+          author: r.author_name,
+          rating: r.rating,
+          text: r.text,
+          time: r.time,
+        })) || [],
     });
-  } catch (err) {
-    console.error("Google Reviews error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
