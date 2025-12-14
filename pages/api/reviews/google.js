@@ -1,22 +1,14 @@
-import { getCache, setCache } from "../../../lib/cache";
-const GOOGLE_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-
-// 12 часов
-const CACHE_TTL = 12 * 60 * 60 * 1000;
-
 export default async function handler(req, res) {
-  try {
-    const { placeId } = req.query;
+  const { placeId, refresh } = req.query;
 
-    if (!placeId) {
-      return res.status(400).json({ error: "placeId is required" });
-    }
+  if (!placeId) {
+    return res.status(400).json({ error: "placeId is required" });
+  }
 
-    const cacheKey = `google_reviews:${placeId}`;
+  const cacheKey = `google_reviews_${placeId}`;
 
-    // -----------------------------
-    // 1️⃣ Проверяем кэш
-    // -----------------------------
+  // если НЕ refresh — пробуем кэш
+  if (!refresh) {
     const cached = getCache(cacheKey);
     if (cached) {
       return res.json({
@@ -24,37 +16,25 @@ export default async function handler(req, res) {
         cached: true,
       });
     }
+  }
 
-    // -----------------------------
-    // 2️⃣ Запрос в Google Places API (NEW)
-    // -----------------------------
-    const url =
-      "https://places.googleapis.com/v1/places/" +
-      placeId +
-      "?fields=displayName,rating,userRatingCount,reviews" +
-      "&languageCode=en";
+  // если refresh=1 — чистим кэш
+  if (refresh === "1") {
+    deleteCache(cacheKey);
+  }
 
-    const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_API_KEY,
-        "X-Goog-FieldMask":
-          "displayName,rating,userRatingCount,reviews.authorAttribution.displayName,reviews.rating,reviews.text.text,reviews.publishTime,reviews.languageCode",
-      },
-    });
+  try {
+    const url = `https://places.googleapis.com/v1/places/${placeId}?fields=displayName,rating,userRatingCount,reviews&key=${process.env.GOOGLE_MAPS_API_KEY}`;
 
+    const response = await fetch(url);
     const data = await response.json();
 
-    if (!response.ok) {
+    if (data.error) {
       return res.status(500).json({
-        error: "Google API error",
-        details: data,
+        error: data.error.message || "Google API error",
       });
     }
 
-    // -----------------------------
-    // 3️⃣ Нормализация данных
-    // -----------------------------
     const result = {
       success: true,
       place: {
@@ -62,26 +42,24 @@ export default async function handler(req, res) {
         rating: data.rating || null,
         totalReviews: data.userRatingCount || 0,
       },
-      reviews: (data.reviews || []).map((r) => ({
-        author: r.authorAttribution?.displayName || "Anonymous",
-        rating: r.rating,
-        text: r.text?.text || "",
-        language: r.languageCode,
-        publishTime: r.publishTime,
-      })),
+      reviews:
+        (data.reviews || []).map((r) => ({
+          author: r.authorAttribution?.displayName || "",
+          rating: r.rating,
+          text: r.text?.text || "",
+          publishTime: r.publishTime,
+          language: r.text?.languageCode,
+        })) || [],
     };
 
-    // -----------------------------
-    // 4️⃣ Кладём в кэш
-    // -----------------------------
-    setCache(cacheKey, result, CACHE_TTL);
+    // ⏱ TTL = 6 часов
+    setCache(cacheKey, result, 6 * 60 * 60 * 1000);
 
-    return res.json({
+    res.json({
       ...result,
       cached: false,
     });
-  } catch (error) {
-    console.error("Google reviews error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch reviews" });
   }
 }
