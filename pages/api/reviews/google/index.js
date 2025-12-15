@@ -1,4 +1,4 @@
-import { getCache, setCache } from "../../../lib/cache";
+import { getCache, setCache } from "../../../../lib/cache";
 
 export default async function handler(req, res) {
   const { placeId, refresh } = req.query;
