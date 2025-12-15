@@ -3,42 +3,11 @@ import { getCache, setCache } from "../../../../lib/cache";
 const CACHE_TTL = 10 * 60 * 1000;
 
 /**
- * 1️⃣ Получаем финальный URL после редиректов
+ * Загружаем страницу и берём ФИНАЛЬНЫЙ URL + HTML
  */
-async function resolveFinalUrl(url) {
-  let currentUrl = url;
-
-  for (let i = 0; i < 5; i++) {
-    const res = await fetch(currentUrl, {
-      method: "GET",
-      redirect: "manual",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-      },
-    });
-
-    // 301 / 302 / 303 / 307 / 308
-    if (res.status >= 300 && res.status < 400) {
-      const location = res.headers.get("location");
-      if (!location) break;
-
-      currentUrl = location.startsWith("http")
-        ? location
-        : new URL(location, currentUrl).href;
-    } else {
-      return currentUrl;
-    }
-  }
-
-  return currentUrl;
-}
-
-/**
- * 2️⃣ Извлекаем placeId из HTML финальной страницы
- */
-async function extractPlaceId(url) {
+async function fetchFinalPage(url) {
   const res = await fetch(url, {
+    redirect: "follow",
     headers: {
       "User-Agent":
         "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -47,6 +16,16 @@ async function extractPlaceId(url) {
 
   const html = await res.text();
 
+  return {
+    finalUrl: res.url,
+    html,
+  };
+}
+
+/**
+ * Достаём placeId из HTML
+ */
+function extractPlaceIdFromHtml(html) {
   const match =
     html.match(/"place_id":"(ChI[a-zA-Z0-9_-]+)"/) ||
     html.match(/(ChI[a-zA-Z0-9_-]{20,})/);
@@ -71,16 +50,19 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔥 ШАГ 1 — редиректы
-    const finalUrl = await resolveFinalUrl(url);
+    // 🔥 ШАГ 1 — загружаем страницу полностью
+    const { finalUrl, html } = await fetchFinalPage(url);
 
-    // 🔥 ШАГ 2 — placeId
-    const placeId = await extractPlaceId(finalUrl);
+    // 🔥 ШАГ 2 — вытаскиваем placeId
+    const placeId = extractPlaceIdFromHtml(html);
 
     if (!placeId) {
       return res.status(404).json({
         error: "Place not found by provided link",
-        debug: { finalUrl },
+        debug: {
+          originalUrl: url,
+          finalUrl,
+        },
       });
     }
 
